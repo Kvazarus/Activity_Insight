@@ -1,9 +1,12 @@
+// TODO: прикрутить базу данных, сделать обработчик сигналов (Ctrl+C и тд), добавить треды
+// TODO: добавить пользователям возможность сменить имя программы
+
 #include <windows.h>
 #include <iostream>
 #include <chrono>
 #include <thread>
 #include <string>
-
+#include <fcntl.h>
 
 struct WindowData {
     HWND window_handle = nullptr;
@@ -20,14 +23,14 @@ struct WindowData {
 
 WindowData getWindowData() {
     const int string_max_length = 1024;
-
     WindowData window_data;
+    wchar_t buffer[string_max_length] = {0};
+
     window_data.window_handle = GetForegroundWindow();
     if (!window_data.window_handle) {
         window_data.error = "GetForegroundWindow error";
         return window_data;
     }
-    wchar_t buffer[string_max_length];
     if (GetWindowTextW(window_data.window_handle, buffer, string_max_length) > 0) {
         window_data.window_title = buffer;
     }
@@ -64,16 +67,22 @@ void printWindowData(WindowData& window_data) {
 
 int main() {
     setlocale(LC_ALL, "");
+    _setmode(_fileno(stdout), _O_U16TEXT);
 
-    WindowData window_data = getWindowData();
+    WindowData window_data;
+    do {
+        window_data = getWindowData();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    } while (!window_data.isValid());
     printWindowData(window_data);
+
     while (true) {
         WindowData new_window_data = getWindowData();
         if (new_window_data.isValid() && window_data.window_handle != new_window_data.window_handle) {
             window_data = new_window_data;
             printWindowData(window_data);
         } else if (!new_window_data.isValid()) {
-            std::cerr << new_window_data.error;
+            std::cerr << new_window_data.error << std::endl;
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
