@@ -7,6 +7,8 @@
 #include <thread>
 #include <string>
 #include <fcntl.h>
+#include <vector>
+#include <strsafe.h>
 
 struct WindowData {
     HWND window_handle = nullptr;
@@ -45,7 +47,7 @@ WindowData getWindowData() {
     if (window_data.process_handle) {
         DWORD image_name_size = string_max_length;
         if (!QueryFullProcessImageNameW(window_data.process_handle, 0,
-                                   buffer, &image_name_size)) {
+                                        buffer, &image_name_size)) {
             window_data.error = "QueryFullProcessImageNameW error";
         }
         window_data.exe_filename = buffer;
@@ -56,12 +58,59 @@ WindowData getWindowData() {
     return window_data;
 }
 
-void printWindowData(WindowData& window_data) {
+std::wstring getAppNameFromPath(const std::wstring &exe_filename) {
+    int pos = 0;
+    for (int i = 0; i < exe_filename.size(); i++) {
+        if (exe_filename[i] == '\\') pos = i + 1;
+    }
+    return exe_filename.substr(pos, exe_filename.size() - pos - 4);
+}
+
+std::wstring getAppName(const std::wstring &exe_filename) {
+    DWORD dummy = 0;
+    uint32_t buffer_size = GetFileVersionInfoSizeW(exe_filename.c_str(), &dummy);
+    if (!buffer_size) return getAppNameFromPath(exe_filename);
+    std::vector<BYTE> buffer(buffer_size);
+    if (!GetFileVersionInfoW(exe_filename.c_str(), 0, buffer_size, buffer.data())) return getAppNameFromPath(exe_filename);
+
+    HRESULT hr;
+    struct LANGANDCODEPAGE {
+        WORD wLanguage;
+        WORD wCodePage;
+    };
+    LANGANDCODEPAGE *lpTranslate;
+
+    uint32_t data_size = 0;
+    VerQueryValueW(buffer.data(), L"\\VarFileInfo\\Translation",
+                   (LPVOID *) &lpTranslate, &data_size);
+    if (!data_size) return getAppNameFromPath(exe_filename);
+    for (int i = 0; i < (data_size / sizeof(LANGANDCODEPAGE)); i++) {
+        wchar_t lang_and_codepage_str[100];
+        hr = StringCchPrintfW(lang_and_codepage_str, 100, L"\\StringFileInfo\\%04x%04x\\FileDescription",
+                             lpTranslate[i].wLanguage, lpTranslate[i].wCodePage);
+        if (FAILED(hr)) continue;
+
+        wchar_t *app_name = nullptr;
+        uint32_t app_data_size = 0;
+
+        if (VerQueryValueW(buffer.data(), lang_and_codepage_str, (LPVOID*) &app_name, &app_data_size) && app_data_size > 0) {
+            return std::wstring(app_name);
+        }
+    }
+
+    return getAppNameFromPath(exe_filename);
+}
+
+void printWindowData(WindowData &window_data) {
     std::wcout << L"Handle: " << window_data.window_handle << std::endl;
     std::wcout << L"Process Id: " << window_data.process_id << std::endl;
     std::wcout << L"Window Title: " << window_data.window_title << std::endl;
     std::wcout << L"Window Process Handle: " << window_data.process_handle << std::endl;
     std::wcout << L"Window Exe Filename: " << window_data.exe_filename << std::endl;
+
+    // TODO: закешировать app name
+
+    std::wcout << L"App Name: " << getAppName(window_data.exe_filename) << std::endl;
     std::wcout << std::endl;
 }
 
