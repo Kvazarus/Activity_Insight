@@ -2,6 +2,9 @@
 // TODO: добавить пользователям возможность сменить имя программы
 // TODO: сделать обработку вкладок браузера (в том числе обновить цикл в main)
 // TODO: добавить GetAncestor для повышения вероятности успешного считывания окна (а может и не надо, пока всё работает и без него)
+// TODO: дать возможность юзеру выбирать отрезок времени для просмотра активности в пределе месяца (может и больше месяца)
+
+// TODO: добавить .cpp файл к .h файлам
 
 #include <windows.h>
 #include <iostream>
@@ -12,18 +15,12 @@
 #include <vector>
 #include <strsafe.h>
 #include <filesystem>
+#include <corecrt_io.h>
 
-struct WindowData {
-    HWND window_handle = nullptr;
-    DWORD process_id = 0;
-    std::wstring window_title;
-    std::wstring exe_filename;
-    std::string error;
+#include <QCoreApplication>
 
-    bool isValid() const {
-        return !exe_filename.empty();
-    }
-};
+#include "WindowData.h"
+#include "DatabaseManager.h"
 
 WindowData getWindowData() {
     const int string_max_length = 1024;
@@ -114,9 +111,16 @@ void printWindowData(WindowData &window_data) {
     std::wcout << std::endl;
 }
 
-int main() {
+// Возможно стоит игнорировать системные окна по типу Рабочего стола или переключателя окон (shift-tab)
+// В основном из-за того, что может появиться сообщение о непродуктивном приложении в сессии
+int main(int argc, char *argv[]) {
+    QCoreApplication a(argc, argv);
+
     setlocale(LC_ALL, "");
     _setmode(_fileno(stdout), _O_U16TEXT);
+
+    DatabaseManager database_manager;
+    database_manager.Init();
 
     WindowData window_data;
     do {
@@ -125,9 +129,15 @@ int main() {
     } while (!window_data.isValid());
     printWindowData(window_data);
 
+    auto begin_time = std::chrono::high_resolution_clock::now();
     while (true) {
         WindowData new_window_data = getWindowData();
         if (new_window_data.isValid() && window_data.window_handle != new_window_data.window_handle) {
+            auto end_time = std::chrono::high_resolution_clock::now();
+            window_data.time = std::chrono::duration_cast<std::chrono::seconds>(end_time - begin_time).count();
+            begin_time = end_time;
+            // может быть каждые 60 секунд форсировать запись во избежание больших потерь
+
             window_data = new_window_data;
             printWindowData(window_data);
         } else if (!new_window_data.isValid()) {
