@@ -4,7 +4,9 @@ project(Activity_Insight)
 set(CMAKE_CXX_STANDARD 17)
 
 add_executable(Activity_Insight src/main.cpp
-        src/DatabaseManager.h)
+        src/DatabaseManager.h
+        src/DatabaseManager.cpp
+        src/AppStats.h)
 
 target_link_libraries(Activity_Insight PRIVATE version)
 

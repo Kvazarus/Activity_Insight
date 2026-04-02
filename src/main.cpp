@@ -1,10 +1,8 @@
-// TODO: прикрутить базу данных, сделать обработчик сигналов (Ctrl+C и тд), добавить треды
+// TODO: сделать обработчик сигналов (Ctrl+C и тд), добавить треды
 // TODO: добавить пользователям возможность сменить имя программы
 // TODO: сделать обработку вкладок браузера (в том числе обновить цикл в main)
 // TODO: добавить GetAncestor для повышения вероятности успешного считывания окна (а может и не надо, пока всё работает и без него)
 // TODO: дать возможность юзеру выбирать отрезок времени для просмотра активности в пределе месяца (может и больше месяца)
-
-// TODO: добавить .cpp файл к .h файлам
 
 #include <windows.h>
 #include <iostream>
@@ -22,41 +20,7 @@
 #include "WindowData.h"
 #include "DatabaseManager.h"
 
-WindowData getWindowData() {
-    const int string_max_length = 1024;
-    WindowData window_data;
-    wchar_t window_text_buffer[string_max_length] = {0};
-
-    window_data.window_handle = GetForegroundWindow();
-    if (!window_data.window_handle) {
-        window_data.error = "GetForegroundWindow error";
-        return window_data;
-    }
-    if (GetWindowTextW(window_data.window_handle, window_text_buffer, string_max_length) > 0) {
-        window_data.window_title = window_text_buffer;
-    }
-    LPDWORD process_id_ptr = &window_data.process_id;
-    GetWindowThreadProcessId(window_data.window_handle, process_id_ptr);
-    if (!window_data.process_id) {
-        window_data.error = "GetWindowThreadProcessId error";
-        return window_data;
-    }
-    HANDLE process_handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION,
-                                        false, window_data.process_id);
-    if (process_handle) {
-        wchar_t image_name_buffer[string_max_length] = {0};
-        DWORD image_name_size = string_max_length;
-        if (!QueryFullProcessImageNameW(process_handle, 0,
-                                        image_name_buffer, &image_name_size)) {
-            window_data.error = "QueryFullProcessImageNameW error";
-        }
-        window_data.exe_filename = image_name_buffer;
-        CloseHandle(process_handle);
-    } else {
-        window_data.error = "OpenProcess error";
-    }
-    return window_data;
-}
+std::unordered_map<std::wstring, std::wstring> app_name_cache;
 
 std::wstring getAppNameFromPath(const std::wstring &exe_filename) {
     return std::filesystem::path(exe_filename).stem().wstring();
@@ -99,25 +63,73 @@ std::wstring getAppName(const std::wstring &exe_filename) {
     return getAppNameFromPath(exe_filename);
 }
 
+WindowData getWindowData() {
+    const int string_max_length = 1024;
+    WindowData window_data;
+    wchar_t window_text_buffer[string_max_length] = {0};
+
+    window_data.window_handle = GetForegroundWindow();
+    if (!window_data.window_handle) {
+        window_data.error = "GetForegroundWindow error";
+        return window_data;
+    }
+    if (GetWindowTextW(window_data.window_handle, window_text_buffer, string_max_length) > 0) {
+        window_data.window_title = window_text_buffer;
+    }
+    LPDWORD process_id_ptr = &window_data.process_id;
+    GetWindowThreadProcessId(window_data.window_handle, process_id_ptr);
+    if (!window_data.process_id) {
+        window_data.error = "GetWindowThreadProcessId error";
+        return window_data;
+    }
+    HANDLE process_handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION,
+                                        false, window_data.process_id);
+    if (process_handle) {
+        wchar_t image_name_buffer[string_max_length] = {0};
+        DWORD image_name_size = string_max_length;
+        if (!QueryFullProcessImageNameW(process_handle, 0,
+                                        image_name_buffer, &image_name_size)) {
+            window_data.error = "QueryFullProcessImageNameW error";
+        }
+        window_data.exe_filename = image_name_buffer;
+        CloseHandle(process_handle);
+    } else {
+        window_data.error = "OpenProcess error";
+    }
+
+    if (app_name_cache.count(window_data.exe_filename) == 0) {
+        app_name_cache[window_data.exe_filename] = getAppName(window_data.exe_filename);
+    }
+    window_data.display_name = app_name_cache[window_data.exe_filename];
+
+    return window_data;
+}
+
 void printWindowData(WindowData &window_data) {
     std::wcout << L"Handle: " << window_data.window_handle << std::endl;
     std::wcout << L"Process Id: " << window_data.process_id << std::endl;
     std::wcout << L"Window Title: " << window_data.window_title << std::endl;
     std::wcout << L"Window Exe Filename: " << window_data.exe_filename << std::endl;
-
-    // TODO: закешировать app name
-
-    std::wcout << L"App Name: " << getAppName(window_data.exe_filename) << std::endl;
+    std::wcout << L"App Name: " << window_data.display_name << std::endl;
     std::wcout << std::endl;
 }
 
+int64_t getTimeDiffInSecs(std::chrono::time_point<std::chrono::steady_clock> begin,
+                    std::chrono::time_point<std::chrono::steady_clock> end) {
+    return std::chrono::duration_cast<std::chrono::seconds>(abs(end - begin)).count();
+}
+
+// TODO: после добавления таблицы для вкладок браузера, поменять сравнения на window_title, а не window_handle
 // Возможно стоит игнорировать системные окна по типу Рабочего стола или переключателя окон (shift-tab)
 // В основном из-за того, что может появиться сообщение о непродуктивном приложении в сессии
 int main(int argc, char *argv[]) {
     QCoreApplication a(argc, argv);
 
-    setlocale(LC_ALL, "");
-    _setmode(_fileno(stdout), _O_U16TEXT);
+//    setlocale(LC_ALL, "");
+//    _setmode(_fileno(stdout), _O_U16TEXT);
+    SetConsoleCP(CP_UTF8);
+    SetConsoleOutputCP(CP_UTF8);
+    setlocale(LC_ALL, ".UTF8");
 
     DatabaseManager database_manager;
     database_manager.Init();
@@ -127,22 +139,37 @@ int main(int argc, char *argv[]) {
         window_data = getWindowData();
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     } while (!window_data.isValid());
-    printWindowData(window_data);
+//    printWindowData(window_data);
 
     auto begin_time = std::chrono::high_resolution_clock::now();
+    auto display_time = std::chrono::high_resolution_clock::now();
     while (true) {
         WindowData new_window_data = getWindowData();
+        auto end_time = std::chrono::high_resolution_clock::now();
         if (new_window_data.isValid() && window_data.window_handle != new_window_data.window_handle) {
-            auto end_time = std::chrono::high_resolution_clock::now();
-            window_data.time = std::chrono::duration_cast<std::chrono::seconds>(end_time - begin_time).count();
+            window_data.time = getTimeDiffInSecs(begin_time, end_time);
             begin_time = end_time;
-            // может быть каждые 60 секунд форсировать запись во избежание больших потерь
-
+            database_manager.InsertActivityLog(window_data);
             window_data = new_window_data;
-            printWindowData(window_data);
+//            printWindowData(window_data);
         } else if (!new_window_data.isValid()) {
             std::cerr << new_window_data.error << std::endl;
         }
+        int64_t time_diff = getTimeDiffInSecs(begin_time, end_time);
+        if (time_diff >= 60) {
+            window_data.time = time_diff;
+            begin_time = end_time;
+            database_manager.InsertActivityLog(window_data);
+        }
+
+        if (getTimeDiffInSecs(display_time, std::chrono::high_resolution_clock::now()) >= 30) {
+            for (auto& x : database_manager.GetUpdatedDailyAppStats()) {
+                std::wcout << x.display_name << L": " << x.total_time << L" sec" << std::endl;
+            }
+            std::wcout << std::endl;
+            display_time = std::chrono::high_resolution_clock::now();
+        }
+
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 }
