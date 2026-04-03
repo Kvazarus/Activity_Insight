@@ -3,6 +3,8 @@
 
 #include <windows.h>
 
+#include <QMetaType>
+
 struct WindowData {
     HWND window_handle = nullptr;
     DWORD process_id = 0;
@@ -16,5 +18,7 @@ struct WindowData {
         return !exe_filename.empty();
     }
 };
+
+Q_DECLARE_METATYPE(WindowData);
 
 #endif //ACTIVITY_INSIGHT_WINDOW_DATA

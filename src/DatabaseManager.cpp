@@ -7,7 +7,7 @@
 #include <QSqlError>
 #include <QDate>
 
-DatabaseManager::DatabaseManager() {
+DatabaseManager::DatabaseManager(QObject *parent) : QObject(parent) {
     db = QSqlDatabase::addDatabase("QSQLITE");
     db.setDatabaseName("activity_insight.db");
     bool ok = db.open();
@@ -16,7 +16,7 @@ DatabaseManager::DatabaseManager() {
     }
 }
 
-void DatabaseManager::Init() {
+void DatabaseManager::init() {
     QSqlQuery q(db);
 
     // Позже можно добавить таблицу связанную с window title
@@ -83,7 +83,7 @@ void DatabaseManager::Init() {
     }
 }
 
-void DatabaseManager::InsertActivityLog(WindowData &window_data) {
+void DatabaseManager::insertActivityLog(const WindowData &window_data) {
     QSqlQuery q(db);
 
     q.prepare("INSERT OR IGNORE INTO applications (exe_filename, display_name) "
@@ -104,7 +104,7 @@ void DatabaseManager::InsertActivityLog(WindowData &window_data) {
     }
 }
 
-void DatabaseManager::UpdateDailyStats() {
+void DatabaseManager::updateDailyStats() {
     if (db.transaction()) {
         QSqlQuery q(db);
 
@@ -143,8 +143,8 @@ void DatabaseManager::UpdateDailyStats() {
     }
 }
 
-std::vector<AppStats> DatabaseManager::GetUpdatedDailyAppStats(const std::string& date_from, const std::string& date_to) {
-    UpdateDailyStats();
+std::vector<AppStats> DatabaseManager::getUpdatedDailyAppStats(const std::string& date_from, const std::string& date_to) {
+    updateDailyStats();
 
     QString q_date_from;
     QString q_date_to;
