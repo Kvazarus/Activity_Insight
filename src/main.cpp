@@ -3,6 +3,10 @@
 // TODO: сделать обработку вкладок браузера (в том числе обновить цикл в main)
 // TODO: добавить GetAncestor для повышения вероятности успешного считывания окна (а может и не надо, пока всё работает и без него)
 // TODO: дать возможность юзеру выбирать отрезок времени для просмотра активности в пределе месяца (может и больше месяца)
+// TODO: при отвлечении во время активной фокус сессии показывать сообщения с юмором, а не пустые "Вы отвлеклись"
+// TODO: создать подсказку для пользователя, что можно создать доп категорию с припиской отвлекающая,
+// TODO: чтобы если что в категории с одним названием были и отвлекающие приложения, и нет
+// TODO: добавить приложение в систем трей
 
 #include <windows.h>
 #include <iostream>
@@ -15,14 +19,15 @@
 #include <filesystem>
 #include <corecrt_io.h>
 
-#include <QCoreApplication>
+#include <QApplication>
 
 #include "WindowData.h"
 #include "DatabaseManager.h"
 #include "WindowsReaderThread.h"
+#include "ActivityDashboard.h"
 
 int main(int argc, char *argv[]) {
-    QCoreApplication a(argc, argv);
+    QApplication a(argc, argv);
 
 //    setlocale(LC_ALL, "");
 //    _setmode(_fileno(stdout), _O_U16TEXT);
@@ -32,8 +37,9 @@ int main(int argc, char *argv[]) {
 
     qRegisterMetaType<WindowData>("WindowData");
 
-    WindowsReaderThread windows_reader_thread;
-    DatabaseManager database_manager;
+    ActivityDashboard activity_dashboard;
+    WindowsReaderThread windows_reader_thread(&activity_dashboard);
+    DatabaseManager database_manager(&activity_dashboard);
     database_manager.init();
 
     QObject::connect(&windows_reader_thread, &WindowsReaderThread::sendActivityLog, &database_manager,
@@ -46,7 +52,12 @@ int main(int argc, char *argv[]) {
     });
 
     windows_reader_thread.start();
+    activity_dashboard.show();
 
-    a.exec();
-    return 0;
+    auto exit_code = a.exec();
+
+    windows_reader_thread.requestInterruption();
+    windows_reader_thread.wait();
+
+    return exit_code;
 }

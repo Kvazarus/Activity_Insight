@@ -33,36 +33,7 @@ class WindowsReaderThread : public QThread {
  public:
     explicit WindowsReaderThread(QObject *parent = nullptr) : QThread(parent) {}
  protected:
-    void run() override {
-        WindowData window_data;
-        do {
-            window_data = getWindowData();
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        } while (!window_data.isValid());
-        printWindowData(window_data);
-
-        auto begin_time = std::chrono::high_resolution_clock::now();
-        while (true) {
-            WindowData new_window_data = getWindowData();
-            auto end_time = std::chrono::high_resolution_clock::now();
-            if (new_window_data.isValid() && window_data.window_handle != new_window_data.window_handle) {
-                window_data.time = getTimeDiffInSecs(begin_time, end_time);
-                begin_time = end_time;
-                emit sendActivityLog(window_data);
-                window_data = new_window_data;
-                printWindowData(window_data);
-            } else if (!new_window_data.isValid()) {
-                std::cerr << new_window_data.error << std::endl;
-            }
-            int64_t time_diff = getTimeDiffInSecs(begin_time, end_time);
-            if (time_diff >= 60) {
-                window_data.time = time_diff;
-                begin_time = end_time;
-                emit sendActivityLog(window_data);
-            }
-            sleep(1);
-        }
-    }
+    void run() override;
  signals:
     void sendActivityLog(const WindowData& window_data);
 };
