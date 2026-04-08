@@ -162,11 +162,12 @@ std::vector<AppStats> DatabaseManager::getUpdatedDailyAppStats(const std::string
     QSqlQuery q(db);
 
     q.prepare(R"(
-        SELECT a.exe_filename, a.display_name, a.is_hidden, a.category_id, SUM(ds.total_time)
+        SELECT a.exe_filename, a.display_name, a.is_hidden, a.category_id, SUM(ds.total_time) as total_time_sum
         FROM daily_stats ds
         JOIN applications a ON a.id = ds.app_id
         WHERE ds.stat_date BETWEEN ? AND ?
-        GROUP BY ds.app_id;
+        GROUP BY ds.app_id
+        ORDER BY total_time_sum DESC
     )");
     q.addBindValue(q_date_from);
     q.addBindValue(q_date_to);
