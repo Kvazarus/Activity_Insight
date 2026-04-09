@@ -21,3 +21,12 @@ target_link_libraries(Activity_Insight PRIVATE version)
 
 find_package(Qt6 REQUIRED COMPONENTS Sql Core Widgets Charts)
 target_link_libraries(Activity_Insight PRIVATE Qt6::Sql Qt6::Core Qt6::Widgets Qt6::Charts)
+
+set(app_resource_files
+    "assets/app_icon.png"
+)
+
+qt_add_resources(Activity_Insight "app_resources"
+    PREFIX "/"
+    FILES ${app_resource_files}
+)

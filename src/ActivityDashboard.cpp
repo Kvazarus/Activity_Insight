@@ -1,11 +1,13 @@
 // You may need to build the project (run Qt uic code generator) to get "ui_ActivityDashboard.h" resolved
 
 #include <QPieSeries>
+#include <thread>
 #include "ActivityDashboard.h"
 #include "ui_ActivityDashboard.h"
 
 ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget *parent) :
-    QMainWindow(parent), ui(new Ui::ActivityDashboard), database_manager(database_manager) {
+    QMainWindow(parent), ui(new Ui::ActivityDashboard), database_manager(database_manager),
+    tray_icon(new QSystemTrayIcon(this)) {
     ui->setupUi(this);
     ui->overviewSplitter->setSizes({6000, 4000});
     ui->overviewSplitter->setStretchFactor(0, 6);
@@ -16,12 +18,47 @@ ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget 
     ui->tableOverviewList->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
     ui->tableOverviewList->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
 
+    createMenu();
+    tray_icon->setContextMenu(tray_menu);
+
+    QIcon app_icon = QIcon(":/assets/app_icon.png");
+    tray_icon->setIcon(app_icon);
+    this->setWindowIcon(app_icon);
+    connect(tray_icon, &QSystemTrayIcon::activated, this, &ActivityDashboard::iconActivated);
+
+    tray_icon->show();
     QMainWindow::showMaximized();
     refreshData();
 }
 
 ActivityDashboard::~ActivityDashboard() {
     delete ui;
+}
+
+void ActivityDashboard::createMenu() {
+    auto show_hide_action = new QAction("Show");
+    auto quit_action = new QAction("Quit");
+
+    connect(show_hide_action, &QAction::triggered, this, [this](){
+        this->setVisible(!this->isVisible());
+    });
+    connect(quit_action, &QAction::triggered, this, [this](){
+        is_quitting = true;
+        qApp->quit();
+    });
+
+    tray_menu = new QMenu(this);
+    tray_menu->addAction(show_hide_action);
+    tray_menu->addSeparator();
+    tray_menu->addAction(quit_action);
+
+    connect(tray_menu, &QMenu::aboutToShow, this, [this, show_hide_action](){
+       if (this->isVisible()) {
+           show_hide_action->setText("Hide");
+       } else {
+           show_hide_action->setText("Show");
+       }
+    });
 }
 
 void ActivityDashboard::refreshData() {
@@ -55,6 +92,32 @@ void ActivityDashboard::refreshOverview(QDate &date_from, QDate &date_to) {
     });
     ui->tableOverviewList->setRowCount(data.size());
 
+    QChart* chart = ui->chartPieOverview->chart();
+    if (!chart) {
+        chart = new QChart;
+        ui->chartPieOverview->setChart(chart);
+        ui->chartPieOverview->setRenderHint(QPainter::Antialiasing);
+    }
+    chart->removeAllSeries();
+
+    QLabel* empty_data_label = ui->chartPieOverview->findChild<QLabel*>("emptyDataLabel");
+    if (data.empty()) {
+        if (!empty_data_label) {
+            empty_data_label = new QLabel("No data for these dates", ui->chartPieOverview);
+            empty_data_label->setObjectName("emptyDataLabel");
+            empty_data_label->setAlignment(Qt::AlignCenter);
+            empty_data_label->setStyleSheet("QLabel { color : orange; font-size : 20px; }");
+
+            QVBoxLayout* overlay_layout = new QVBoxLayout(ui->chartPieOverview);
+            overlay_layout->addWidget(empty_data_label);
+        }
+        empty_data_label->show();
+        return;
+    }
+    if (empty_data_label) {
+        empty_data_label->hide();
+    }
+
     auto *pie_series = new QPieSeries;
     int64_t others_time = 0;
     for (int i = 0; i < data.size(); i++) {
@@ -75,19 +138,31 @@ void ActivityDashboard::refreshOverview(QDate &date_from, QDate &date_to) {
     }
     pie_series->setLabelsVisible();
 
-    QChart* chart = ui->chartPieOverview->chart();
-    if (!chart) {
-        chart = new QChart;
-        ui->chartPieOverview->setChart(chart);
-        ui->chartPieOverview->setRenderHint(QPainter::Antialiasing);
-    }
-    chart->removeAllSeries();
     chart->addSeries(pie_series);
     chart->setTheme(QChart::ChartThemeDark);
 //    chart->setBackgroundVisible(false);
     chart->setAnimationOptions(QChart::SeriesAnimations);
     chart->legend()->setVisible(false);
-
-
 }
 
+void ActivityDashboard::iconActivated(QSystemTrayIcon::ActivationReason activation_reason) {
+    switch (activation_reason) {
+        case QSystemTrayIcon::DoubleClick:
+        case QSystemTrayIcon::Trigger:
+        {
+            this->setVisible(!this->isVisible());
+            break;
+        }
+        default:
+            ;
+    }
+}
+
+void ActivityDashboard::closeEvent(QCloseEvent *event) {
+    if (is_quitting) {
+        event->accept();
+    } else {
+        this->hide();
+        event->ignore();
+    }
+}
