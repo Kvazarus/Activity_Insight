@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>808</width>
+    <width>850</width>
     <height>657</height>
    </rect>
   </property>
@@ -48,6 +48,38 @@
        <property name="bottomMargin">
         <number>0</number>
        </property>
+       <item>
+        <widget class="QLabel" name="labelMode">
+         <property name="text">
+          <string>Mode:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="comboMode">
+         <property name="minimumSize">
+          <size>
+           <width>120</width>
+           <height>0</height>
+          </size>
+         </property>
+         <item>
+          <property name="text">
+           <string>Applications</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Categories</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Focus Sessions</string>
+          </property>
+         </item>
+        </widget>
+       </item>
        <item>
         <widget class="QLabel" name="labelFrom">
          <property name="text">
@@ -242,7 +274,7 @@
            </font>
           </property>
           <property name="text">
-           <string>Select an application from the Overview</string>
+           <string>Click an application from the Overview</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -297,14 +329,135 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_5">
         <item>
-         <widget class="QLabel" name="label_3">
+         <widget class="QLabel" name="lblSettingsTitle">
+          <property name="font">
+           <font>
+            <pointsize>14</pointsize>
+            <bold>true</bold>
+           </font>
+          </property>
           <property name="text">
-           <string>Manage categories and hidden apps (Work in Progress)</string>
+           <string>Application Properties</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignmentFlag::AlignCenter</set>
           </property>
          </widget>
+        </item>
+        <item>
+         <widget class="QFrame" name="frameSettings">
+          <property name="frameShape">
+           <enum>QFrame::Shape::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Shadow::Raised</enum>
+          </property>
+          <layout class="QFormLayout" name="formLayout">
+           <property name="labelAlignment">
+            <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+           </property>
+           <property name="formAlignment">
+            <set>Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignTop</set>
+           </property>
+           <property name="horizontalSpacing">
+            <number>20</number>
+           </property>
+           <property name="verticalSpacing">
+            <number>15</number>
+           </property>
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_4">
+             <property name="text">
+              <string>Full Path:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="editSettingsPath">
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+             <property name="placeholderText">
+              <string>Double click an app from Overview...</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_5">
+             <property name="text">
+              <string>Display Name:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="editSettingsName"/>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_6">
+             <property name="text">
+              <string>Category:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QComboBox" name="comboSettingsCategory">
+             <item>
+              <property name="text">
+               <string>Uncategorized</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Work</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Entertainment</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="label_7">
+             <property name="text">
+              <string>Visibility:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QCheckBox" name="checkSettingsHidden">
+             <property name="text">
+              <string>Hide this application from statistics</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <spacer name="horizontalSpacer_2">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnSaveSettings">
+            <property name="text">
+             <string>Save Changes</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
         <item>
          <spacer name="verticalSpacer">
@@ -335,6 +488,7 @@
   </customwidget>
  </customwidgets>
  <tabstops>
+  <tabstop>comboMode</tabstop>
   <tabstop>dateEditFrom</tabstop>
   <tabstop>dateEditTo</tabstop>
   <tabstop>btnRefresh</tabstop>
@@ -347,6 +501,11 @@
   <tabstop>btnPrevWeek</tabstop>
   <tabstop>chartBarAppDetails</tabstop>
   <tabstop>btnNextWeek</tabstop>
+  <tabstop>editSettingsPath</tabstop>
+  <tabstop>editSettingsName</tabstop>
+  <tabstop>comboSettingsCategory</tabstop>
+  <tabstop>checkSettingsHidden</tabstop>
+  <tabstop>btnSaveSettings</tabstop>
  </tabstops>
  <resources/>
  <connections>

@@ -178,7 +178,7 @@ std::vector<AppStats> DatabaseManager::getUpdatedDailyAppStats(const std::string
 
     std::vector<AppStats> res;
     while (q.next()) {
-        res.push_back({q.value(0).toString().toStdWString(), q.value(1).toString().toStdWString(),
+        res.push_back({q.value(0).toString(), q.value(1).toString(),
                          q.value(2).toBool(), q.value(3).toLongLong(), q.value(4).toLongLong()});
     }
     return res;

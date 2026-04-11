@@ -119,6 +119,15 @@ void setupAppStyle(QApplication& a) {
         background-color: transparent;
         border: none;
     }
+
+    /* --- LineEdits and ComboBoxes --- */
+    QLineEdit, QComboBox {
+        background-color: #2b2b2b;
+        color: white;
+        border: 1px solid #444;
+        border-radius: 4px;
+        padding: 4px;
+    }
     )";
 
     a.setStyleSheet(styleSheet);
@@ -147,7 +156,7 @@ int main(int argc, char *argv[]) {
             [&database_manager](const WindowData& window_data) {
         database_manager.insertActivityLog(window_data);
         for (auto& x : database_manager.getUpdatedDailyAppStats()) {
-            std::wcout << x.display_name << L": " << x.total_time << L" sec" << std::endl;
+            std::wcout << x.display_name.toStdWString() << L": " << x.total_time << L" sec" << std::endl;
         }
         std::wcout << std::endl;
     });

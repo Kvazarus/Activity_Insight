@@ -14,9 +14,17 @@ ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget 
     ui->overviewSplitter->setStretchFactor(1, 4);
     ui->dateEditFrom->setDate(QDate::currentDate());
     ui->dateEditTo->setDate(QDate::currentDate());
+    ui->dateEditFrom->setKeyboardTracking(false);
+    ui->dateEditTo->setKeyboardTracking(false);
     ui->tabWidget->setFocus();
     ui->tableOverviewList->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
     ui->tableOverviewList->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    ui->tableOverviewList->setColumnCount(5);
+    ui->tableOverviewList->hideColumn(2); // exe_filename
+    ui->tableOverviewList->hideColumn(3); // is_hidden
+    ui->tableOverviewList->hideColumn(4); // category_id
+
+    connect(ui->tableOverviewList, &QTableWidget::cellDoubleClicked, this, &ActivityDashboard::tableItemDoubleClicked);
 
     createMenu();
     tray_icon->setContextMenu(tray_menu);
@@ -41,6 +49,7 @@ void ActivityDashboard::createMenu() {
 
     connect(show_hide_action, &QAction::triggered, this, [this](){
         this->setVisible(!this->isVisible());
+        if (this->isVisible()) this->activateWindow();
     });
     connect(quit_action, &QAction::triggered, this, [this](){
         is_quitting = true;
@@ -112,6 +121,8 @@ void ActivityDashboard::refreshOverview(QDate &date_from, QDate &date_to) {
             overlay_layout->addWidget(empty_data_label);
         }
         empty_data_label->show();
+        chart->setTheme(QChart::ChartThemeDark);
+        chart->setAnimationOptions(QChart::SeriesAnimations);
         return;
     }
     if (empty_data_label) {
@@ -122,16 +133,21 @@ void ActivityDashboard::refreshOverview(QDate &date_from, QDate &date_to) {
     int64_t others_time = 0;
     for (int i = 0; i < data.size(); i++) {
         auto& app_stats = data[i];
-        const QString q_display_name = QString::fromStdWString(app_stats.display_name);
         if (app_stats.total_time * 20 >= time_sum) {
-            pie_series->append(q_display_name, app_stats.total_time);
+            pie_series->append(app_stats.display_name, app_stats.total_time);
         } else {
             others_time += app_stats.total_time;
         }
-        QTableWidgetItem *app_item = new QTableWidgetItem(q_display_name);
+        QTableWidgetItem *app_item = new QTableWidgetItem(app_stats.display_name);
         ui->tableOverviewList->setItem(i, 0, app_item);
         QTableWidgetItem *time_item = new QTableWidgetItem(getDisplayTime(app_stats.total_time));
         ui->tableOverviewList->setItem(i, 1, time_item);
+        QTableWidgetItem *exe_filename_item = new QTableWidgetItem(app_stats.exe_filename);
+        ui->tableOverviewList->setItem(i, 2, exe_filename_item);
+        QTableWidgetItem *is_hidden_item = new QTableWidgetItem(QString::number(app_stats.is_hidden));
+        ui->tableOverviewList->setItem(i, 3, is_hidden_item);
+        QTableWidgetItem *category_id_item = new QTableWidgetItem(QString::number(app_stats.category_id));
+        ui->tableOverviewList->setItem(i, 4, category_id_item);
     }
     if (others_time > 0) {
         pie_series->append("Others", others_time);
@@ -151,6 +167,7 @@ void ActivityDashboard::iconActivated(QSystemTrayIcon::ActivationReason activati
         case QSystemTrayIcon::Trigger:
         {
             this->setVisible(!this->isVisible());
+            if (this->isVisible()) this->activateWindow();
             break;
         }
         default:
@@ -165,4 +182,22 @@ void ActivityDashboard::closeEvent(QCloseEvent *event) {
         this->hide();
         event->ignore();
     }
+}
+
+void ActivityDashboard::updateActiveApp(int row, int col) {
+    auto table = ui->tableOverviewList;
+    active_app.display_name = table->item(row, 0)->text();
+    active_app.total_time = table->item(row, 1)->text().toLongLong();
+    active_app.exe_filename = table->item(row, 2)->text();
+    active_app.is_hidden = table->item(row, 3)->text().toInt();
+    active_app.category_id = table->item(row, 4)->text().toLongLong();
+}
+
+void ActivityDashboard::tableItemDoubleClicked(int row, int col) {
+    updateActiveApp(row, col);
+    ui->editSettingsPath->setText(active_app.exe_filename);
+    ui->editSettingsName->setText(active_app.display_name);
+//    ui->comboSettingsCategory
+    ui->checkSettingsHidden->setCheckState(active_app.is_hidden ? Qt::CheckState::Checked : Qt::CheckState::Unchecked);
+    ui->tabWidget->setCurrentIndex(3);
 }
