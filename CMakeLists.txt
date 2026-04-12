@@ -15,6 +15,7 @@ add_executable(Activity_Insight src/main.cpp
         src/ActivityDashboard.h
         src/ActivityDashboard.ui
         assets/app.rc
+        src/Category.h
 )
 
 target_link_libraries(Activity_Insight PRIVATE version)

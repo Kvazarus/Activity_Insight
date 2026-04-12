@@ -17,6 +17,7 @@ ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget 
     ui->dateEditFrom->setKeyboardTracking(false);
     ui->dateEditTo->setKeyboardTracking(false);
     ui->tabWidget->setFocus();
+    ui->tabWidget->setCurrentIndex(0);
     ui->tableOverviewList->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
     ui->tableOverviewList->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
     ui->tableOverviewList->setColumnCount(5);
@@ -28,13 +29,13 @@ ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget 
 
     createMenu();
     tray_icon->setContextMenu(tray_menu);
-
     QIcon app_icon = QIcon(":/assets/app_icon.png");
     tray_icon->setIcon(app_icon);
     this->setWindowIcon(app_icon);
     connect(tray_icon, &QSystemTrayIcon::activated, this, &ActivityDashboard::iconActivated);
-
     tray_icon->show();
+
+    categories = database_manager->getCategories();
     QMainWindow::showMaximized();
     refreshData();
 }
@@ -80,15 +81,20 @@ void ActivityDashboard::refreshData() {
 }
 
 QString ActivityDashboard::getDisplayTime(int64_t time) {
+    if (time == 0) return {"0 min"};
     if (time < 60) {
         return {"less than 1 min"};
     }
-    int64_t hours = time / 3600;
+    int64_t days = time / 3600 / 24;
+    int64_t hours = time / 3600 % 24;
     int64_t minutes = time % 3600 / 60;
-    if (hours == 0) {
+    if (hours == 0 && days == 0) {
         return QString::number(minutes) + QString(" min");
-    } else {
+    } else if (days == 0) {
         return QString::number(hours) + QString(" h ") + QString::number(minutes) + QString(" min");
+    } else {
+        return QString::number(days) + QString(" days ") + QString::number(hours) + QString(" h ") +
+            QString::number(minutes) + QString(" min");
     }
 }
 
@@ -99,6 +105,7 @@ void ActivityDashboard::refreshOverview(QDate &date_from, QDate &date_to) {
                                        [](auto& a, auto& b) {
         return a + b.total_time;
     });
+    ui->lblTotalTime->setText("Total time: " + getDisplayTime(time_sum));
     ui->tableOverviewList->setRowCount(data.size());
 
     QChart* chart = ui->chartPieOverview->chart();
@@ -122,6 +129,7 @@ void ActivityDashboard::refreshOverview(QDate &date_from, QDate &date_to) {
         }
         empty_data_label->show();
         chart->setTheme(QChart::ChartThemeDark);
+        chart->setBackgroundVisible(false);
         chart->setAnimationOptions(QChart::SeriesAnimations);
         return;
     }
@@ -133,8 +141,15 @@ void ActivityDashboard::refreshOverview(QDate &date_from, QDate &date_to) {
     int64_t others_time = 0;
     for (int i = 0; i < data.size(); i++) {
         auto& app_stats = data[i];
+        QPieSlice *slice = new QPieSlice(app_stats.display_name, app_stats.total_time);
         if (app_stats.total_time * 20 >= time_sum) {
-            pie_series->append(app_stats.display_name, app_stats.total_time);
+            pie_series->append(slice);
+            connect(slice, &QPieSlice::hovered, this, [slice](bool flag){
+                slice->setExploded(flag);
+            });
+            connect(slice, &QPieSlice::doubleClicked, this, [this, i](){
+                tableItemDoubleClicked(i);
+            });
         } else {
             others_time += app_stats.total_time;
         }
@@ -156,7 +171,7 @@ void ActivityDashboard::refreshOverview(QDate &date_from, QDate &date_to) {
 
     chart->addSeries(pie_series);
     chart->setTheme(QChart::ChartThemeDark);
-//    chart->setBackgroundVisible(false);
+    chart->setBackgroundVisible(false);
     chart->setAnimationOptions(QChart::SeriesAnimations);
     chart->legend()->setVisible(false);
 }
@@ -184,17 +199,17 @@ void ActivityDashboard::closeEvent(QCloseEvent *event) {
     }
 }
 
-void ActivityDashboard::updateActiveApp(int row, int col) {
+void ActivityDashboard::updateActiveApp(int row) {
     auto table = ui->tableOverviewList;
     active_app.display_name = table->item(row, 0)->text();
     active_app.total_time = table->item(row, 1)->text().toLongLong();
     active_app.exe_filename = table->item(row, 2)->text();
     active_app.is_hidden = table->item(row, 3)->text().toInt();
-    active_app.category_id = table->item(row, 4)->text().toLongLong();
+    active_app.category_id = table->item(row, 4)->text().toInt();
 }
 
-void ActivityDashboard::tableItemDoubleClicked(int row, int col) {
-    updateActiveApp(row, col);
+void ActivityDashboard::tableItemDoubleClicked(int row) {
+    updateActiveApp(row);
     ui->editSettingsPath->setText(active_app.exe_filename);
     ui->editSettingsName->setText(active_app.display_name);
 //    ui->comboSettingsCategory

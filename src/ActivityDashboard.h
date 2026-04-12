@@ -5,8 +5,9 @@
 #include <QSystemTrayIcon>
 #include <QMenu>
 #include "DatabaseManager.h"
+#include "Category.h"
 
-//TODO: Добавить сверху панель с выбором мода: "Приложения, Категории, Фокус-сессии"
+// TODO: Добавить в настройках приложений опцию: вернуть скрытые приложения
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class ActivityDashboard; }
@@ -26,12 +27,13 @@ class ActivityDashboard : public QMainWindow {
     QMenu *tray_menu;
     bool is_quitting = false;
     AppStats active_app;
-//    vector<Category> categories;
+    std::unordered_map<int, Category> categories;
 
     QString getDisplayTime(int64_t time);
-    void refreshOverview(QDate& date_from, QDate& date_to);
     void createMenu();
-    void updateActiveApp(int row, int col);
+    void refreshOverview(QDate& date_from, QDate& date_to);
+    void updateActiveApp(int row);
+//    void refreshDailyActivity(QDate& date_to);
 
  protected:
     void closeEvent(QCloseEvent *event) override;
@@ -39,7 +41,7 @@ class ActivityDashboard : public QMainWindow {
  private slots:
     void refreshData();
     void iconActivated(QSystemTrayIcon::ActivationReason activation_reason);
-    void tableItemDoubleClicked(int row, int col);
+    void tableItemDoubleClicked(int row);
 };
 
 #endif //ACTIVITY_INSIGHT_SRC_ACTIVITYDASHBOARD_H_

@@ -165,7 +165,7 @@ std::vector<AppStats> DatabaseManager::getUpdatedDailyAppStats(const std::string
         SELECT a.exe_filename, a.display_name, a.is_hidden, a.category_id, SUM(ds.total_time) as total_time_sum
         FROM daily_stats ds
         JOIN applications a ON a.id = ds.app_id
-        WHERE ds.stat_date BETWEEN ? AND ?
+        WHERE NOT a.is_hidden AND ds.stat_date BETWEEN ? AND ?
         GROUP BY ds.app_id
         ORDER BY total_time_sum DESC
     )");
@@ -179,7 +179,24 @@ std::vector<AppStats> DatabaseManager::getUpdatedDailyAppStats(const std::string
     std::vector<AppStats> res;
     while (q.next()) {
         res.push_back({q.value(0).toString(), q.value(1).toString(),
-                         q.value(2).toBool(), q.value(3).toLongLong(), q.value(4).toLongLong()});
+                         q.value(2).toBool(), q.value(3).toInt(), q.value(4).toLongLong()});
     }
     return res;
+}
+
+std::unordered_map<int, Category> DatabaseManager::getCategories() {
+    std::unordered_map<int, Category> categories;
+    QSqlQuery q(db);
+
+    if (!q.exec("SELECT id, name, color, is_productive FROM categories")) {
+        qDebug() << "Error when getting categories";
+        db.rollback();
+        return {};
+    }
+
+    while (q.next()) {
+        categories[q.value(0).toInt()] = {q.value(0).toInt(), q.value(1).toString(),
+                       q.value(2).toString(), q.value(3).toBool()};
+    }
+    return categories;
 }

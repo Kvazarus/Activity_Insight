@@ -1,11 +1,8 @@
-// TODO: сделать обработчик сигналов (Ctrl+C и тд), добавить треды
 // TODO: добавить пользователям возможность сменить имя программы (окон)
 // TODO: сделать обработку вкладок браузера (в том числе обновить цикл в main)
-// TODO: дать возможность юзеру выбирать отрезок времени для просмотра активности в пределе месяца (может и больше месяца)
 // TODO: при отвлечении во время активной фокус сессии показывать сообщения с юмором, а не пустые "Вы отвлеклись"
 // TODO: создать подсказку для пользователя, что можно создать доп категорию с припиской отвлекающая,
 // TODO: чтобы если что в категории с одним названием были и отвлекающие приложения, и нет
-// TODO: добавить приложение в систем трей
 
 #include <windows.h>
 #include <iostream>
@@ -147,10 +144,11 @@ int main(int argc, char *argv[]) {
     qRegisterMetaType<WindowData>("WindowData");
 
     DatabaseManager database_manager;
+    database_manager.init();
+
     ActivityDashboard activity_dashboard(&database_manager);
     WindowsReaderThread windows_reader_thread(&activity_dashboard);
 
-    database_manager.init();
 
     QObject::connect(&windows_reader_thread, &WindowsReaderThread::sendActivityLog, &database_manager,
             [&database_manager](const WindowData& window_data) {
