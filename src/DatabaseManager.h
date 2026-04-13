@@ -18,6 +18,7 @@ class DatabaseManager : public QObject {
     void updateDailyStats();
     std::vector<AppStats> getUpdatedDailyAppStats(const std::string& date_from = "today", const std::string& date_to = "today");
     std::unordered_map<int, Category> getCategories();
+    std::vector<int64_t> getWeekUpdatedDailyStats(QDate &date_from, QDate &date_to);
 };
 
 #endif // ACTIVITY_INSIGHT_DATABASE_MANAGER

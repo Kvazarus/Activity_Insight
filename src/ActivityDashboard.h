@@ -26,14 +26,16 @@ class ActivityDashboard : public QMainWindow {
     QSystemTrayIcon *tray_icon;
     QMenu *tray_menu;
     bool is_quitting = false;
+    bool isDateToLastEdited = true;
     AppStats active_app;
     std::unordered_map<int, Category> categories;
 
     QString getDisplayTime(int64_t time);
     void createMenu();
-    void refreshOverview(QDate& date_from, QDate& date_to);
+    void refreshOverview(QDate &date_from, QDate &date_to);
     void updateActiveApp(int row);
-//    void refreshDailyActivity(QDate& date_to);
+    void updateDatesToWeekGap(QDate &date_from, QDate &date_to);
+    void refreshDailyActivity(QDate &date_from, QDate &date_to);
 
  protected:
     void closeEvent(QCloseEvent *event) override;

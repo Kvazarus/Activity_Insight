@@ -449,16 +449,6 @@
                <string>Uncategorized</string>
               </property>
              </item>
-             <item>
-              <property name="text">
-               <string>Work</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Entertainment</string>
-              </property>
-             </item>
             </widget>
            </item>
            <item row="3" column="0">
@@ -564,38 +554,6 @@
     <hint type="destinationlabel">
      <x>647</x>
      <y>22</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>dateEditFrom</sender>
-   <signal>dateChanged(QDate)</signal>
-   <receiver>ActivityDashboard</receiver>
-   <slot>refreshData()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>102</x>
-     <y>24</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>114</x>
-     <y>7</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>dateEditTo</sender>
-   <signal>dateChanged(QDate)</signal>
-   <receiver>ActivityDashboard</receiver>
-   <slot>refreshData()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>203</x>
-     <y>22</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>237</x>
-     <y>7</y>
     </hint>
    </hints>
   </connection>
