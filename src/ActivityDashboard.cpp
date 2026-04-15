@@ -3,7 +3,6 @@
 #include <QPieSeries>
 #include <thread>
 #include <QBarSeries>
-#include <QBarSet>
 #include <QBarCategoryAxis>
 #include <QValueAxis>
 #include "ActivityDashboard.h"
@@ -28,6 +27,7 @@ ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget 
     ui->tableOverviewList->hideColumn(3); // is_hidden
     ui->tableOverviewList->hideColumn(4); // category_id
 
+    connect(ui->tableOverviewList, &QTableWidget::cellClicked, this, &ActivityDashboard::tableItemClicked);
     connect(ui->tableOverviewList, &QTableWidget::cellDoubleClicked, this, &ActivityDashboard::tableItemDoubleClicked);
     connect(ui->dateEditFrom, &QDateEdit::dateChanged, this, [this](){
        isDateToLastEdited = false;
@@ -38,6 +38,19 @@ ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget 
         refreshData();
     });
     connect(ui->tabWidget, &QTabWidget::currentChanged, this, &ActivityDashboard::refreshData);
+    connect(ui->btnDailyPrev, &QToolButton::clicked, this, [this](){
+        // Это автоматически подтянет dateEditTo и обновит страницу благодаря сигналам
+        ui->dateEditFrom->setDate(ui->dateEditFrom->date().addDays(-7));
+    });
+    connect(ui->btnDailyNext, &QToolButton::clicked, this, [this](){
+        ui->dateEditFrom->setDate(ui->dateEditFrom->date().addDays(7));
+    });
+    connect(ui->btnPrevWeek, &QToolButton::clicked, this, [this](){
+        ui->dateEditFrom->setDate(ui->dateEditFrom->date().addDays(-7));
+    });
+    connect(ui->btnNextWeek, &QToolButton::clicked, this, [this](){
+        ui->dateEditFrom->setDate(ui->dateEditFrom->date().addDays(7));
+    });
 
     createMenu();
     tray_icon->setContextMenu(tray_menu);
@@ -103,7 +116,7 @@ void ActivityDashboard::refreshData() {
         if (ui->tabWidget->currentIndex() == 1) {
             refreshDailyActivity(date_from, date_to);
         } else {
-            //
+            refreshDetails(date_from, date_to);
         }
     } else {
         refreshOverview(date_from, date_to);
@@ -146,7 +159,7 @@ void ActivityDashboard::refreshOverview(QDate &date_from, QDate &date_to) {
     }
     chart->removeAllSeries();
 
-    QLabel* empty_data_label = ui->chartPieOverview->findChild<QLabel*>("emptyDataLabelOverviewApps");
+    auto empty_data_label = ui->chartPieOverview->findChild<QLabel*>("emptyDataLabelOverviewApps");
     if (data.empty()) {
         if (!empty_data_label) {
             empty_data_label = new QLabel("No data for these dates", ui->chartPieOverview);
@@ -176,6 +189,9 @@ void ActivityDashboard::refreshOverview(QDate &date_from, QDate &date_to) {
             pie_series->append(slice);
             connect(slice, &QPieSlice::hovered, this, [slice](bool flag){
                 slice->setExploded(flag);
+            });
+            connect(slice, &QPieSlice::clicked, this, [this, i](){
+                tableItemClicked(i);
             });
             connect(slice, &QPieSlice::doubleClicked, this, [this, i](){
                 tableItemDoubleClicked(i);
@@ -208,7 +224,6 @@ void ActivityDashboard::refreshOverview(QDate &date_from, QDate &date_to) {
 
 void ActivityDashboard::iconActivated(QSystemTrayIcon::ActivationReason activation_reason) {
     switch (activation_reason) {
-        case QSystemTrayIcon::DoubleClick:
         case QSystemTrayIcon::Trigger:
         {
             this->setVisible(!this->isVisible());
@@ -238,6 +253,11 @@ void ActivityDashboard::updateActiveApp(int row) {
     active_app.category_id = table->item(row, 4)->text().toInt();
 }
 
+void ActivityDashboard::tableItemClicked(int row) {
+    updateActiveApp(row);
+    ui->tabWidget->setCurrentIndex(2);
+}
+
 void ActivityDashboard::tableItemDoubleClicked(int row) {
     updateActiveApp(row);
     ui->editSettingsPath->setText(active_app.exe_filename);
@@ -258,10 +278,7 @@ void ActivityDashboard::updateDatesToWeekGap(QDate &date_from, QDate &date_to) {
     date_to = date_from.addDays(6);
 }
 
-void ActivityDashboard::refreshDailyActivity(QDate &date_from, QDate &date_to) {
-    auto data = database_manager->getWeekUpdatedDailyStats(date_from, date_to);
-
-    QChart* chart = ui->chartBarDailyTotal->chart();
+QBarSet* ActivityDashboard::setupWeekChart(std::vector<int64_t> &data, QChart* chart) {
     if (!chart) {
         chart = new QChart;
         ui->chartBarDailyTotal->setChart(chart);
@@ -273,17 +290,13 @@ void ActivityDashboard::refreshDailyActivity(QDate &date_from, QDate &date_to) {
         chart->removeAxis(axis);
     }
 
-//    auto font = QFont();
-//    font.setPixelSize(20);
-//    chart->setFont(font);
-
     auto series = new QBarSeries();
     auto bar_set = new QBarSet("Activity");
-    QStringList days{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
+    QStringList days{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
     QStringList custom_labels;
     for (int i = 0; i < 7; i++) {
         *bar_set << (qreal) data[i] / 3600.0;
-        custom_labels.append(days[i] + " - " + getDisplayTime(data[i]));
+        custom_labels.append(days[i] + " (" + getDisplayTime(data[i]) + ")");
     }
     series->append(bar_set);
     series->setLabelsVisible(false);
@@ -310,4 +323,58 @@ void ActivityDashboard::refreshDailyActivity(QDate &date_from, QDate &date_to) {
     chart->setBackgroundVisible(false);
     chart->setAnimationOptions(QChart::SeriesAnimations);
     chart->legend()->setVisible(false);
+
+    auto font = QFont();
+    font.setPixelSize(13);
+    font.setWeight(QFont::Weight::Bold);
+    axisY->setTitleFont(font);
+
+    return bar_set;
+}
+
+void ActivityDashboard::refreshDailyActivity(QDate &date_from, QDate &date_to) {
+    auto data = database_manager->getWeekUpdatedDailyStats(date_from, date_to);
+
+    QChart* chart = ui->chartBarDailyTotal->chart();
+    auto bar_set = setupWeekChart(data, chart);
+
+    connect(bar_set, &QBarSet::clicked, this, [this](int index) {
+        ui->tabWidget->setCurrentIndex(0);
+        QDate date = ui->dateEditFrom->date().addDays(index);
+        ui->dateEditFrom->setDate(date);
+        ui->dateEditTo->setDate(date);
+    });
+}
+
+void ActivityDashboard::refreshDetails(QDate &date_from, QDate &date_to) {
+    QChart* chart = ui->chartBarAppDetails->chart();
+    auto empty_data_label = ui->chartBarAppDetails->findChild<QLabel*>("emptyDataLabelDetailsApps");
+
+    if (active_app.exe_filename.isEmpty()) {
+        if (!empty_data_label) {
+            empty_data_label = new QLabel("Click an application from the Overview", ui->chartBarAppDetails);
+            empty_data_label->setObjectName("emptyDataLabelDetailsApps");
+            empty_data_label->setAlignment(Qt::AlignCenter);
+            empty_data_label->setStyleSheet("QLabel { color : orange; font-size : 20px; }");
+
+            QVBoxLayout* overlay_layout = new QVBoxLayout(ui->chartBarAppDetails);
+            overlay_layout->addWidget(empty_data_label);
+        }
+        empty_data_label->show();
+
+        chart->removeAllSeries();
+        chart->setTheme(QChart::ChartThemeDark);
+        chart->setBackgroundVisible(false);
+        chart->setAnimationOptions(QChart::SeriesAnimations);
+        return;
+    }
+    if (empty_data_label) {
+        empty_data_label->hide();
+    }
+
+    ui->lblDetailsAppName->setText(active_app.display_name);
+    auto data = database_manager->getWeekUpdatedAppStats(active_app.exe_filename, date_from, date_to);
+
+    auto bar_set = setupWeekChart(data, chart);
+    bar_set->setColor("orange");
 }

@@ -4,6 +4,9 @@
 #include <QMainWindow>
 #include <QSystemTrayIcon>
 #include <QMenu>
+#include <QBarSet>
+#include <QChart>
+
 #include "DatabaseManager.h"
 #include "Category.h"
 
@@ -35,7 +38,9 @@ class ActivityDashboard : public QMainWindow {
     void refreshOverview(QDate &date_from, QDate &date_to);
     void updateActiveApp(int row);
     void updateDatesToWeekGap(QDate &date_from, QDate &date_to);
+    QBarSet* setupWeekChart(std::vector<int64_t>& data, QChart* chart);
     void refreshDailyActivity(QDate &date_from, QDate &date_to);
+    void refreshDetails(QDate &date_from, QDate &date_to);
 
  protected:
     void closeEvent(QCloseEvent *event) override;
@@ -43,6 +48,7 @@ class ActivityDashboard : public QMainWindow {
  private slots:
     void refreshData();
     void iconActivated(QSystemTrayIcon::ActivationReason activation_reason);
+    void tableItemClicked(int row);
     void tableItemDoubleClicked(int row);
 };
 

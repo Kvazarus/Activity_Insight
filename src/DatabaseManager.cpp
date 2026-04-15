@@ -222,7 +222,7 @@ std::vector<int64_t> DatabaseManager::getWeekUpdatedDailyStats(QDate &date_from,
     q.addBindValue(date_from.toString("yyyy-MM-dd"));
     q.addBindValue(date_to.toString("yyyy-MM-dd"));
     if (!q.exec()) {
-        qDebug() << "Failed to get week data: " << q.lastError().text();
+        qDebug() << "Failed to get week daily data: " << q.lastError().text();
         return std::vector<int64_t>(7, 0);
     }
 
@@ -230,6 +230,51 @@ std::vector<int64_t> DatabaseManager::getWeekUpdatedDailyStats(QDate &date_from,
     while (q.next()) {
         QDate date = q.value(0).toDate();
         int64_t index = date_from.daysTo(date);
+
+        if (index < 0 || index >= 7) {
+            qDebug() << "Wrong index week daily stats data";
+            return std::vector<int64_t>(7, 0);
+        }
+
+        res[index] = q.value(1).toLongLong();
+    }
+    return res;
+}
+
+std::vector<int64_t> DatabaseManager::getWeekUpdatedAppStats(const QString &exe_filename, QDate &date_from, QDate &date_to) {
+    updateDailyStats();
+
+    if (date_from.daysTo(date_to) != 6) {
+        qDebug() << "Gap between dates does not equal week";
+        return std::vector<int64_t>(7, 0);
+    }
+
+    QSqlQuery q(db);
+
+    q.prepare(R"(
+        SELECT ds.stat_date, ds.total_time
+        FROM daily_stats ds
+        JOIN applications a ON a.id = ds.app_id
+        WHERE a.exe_filename = ? AND ds.stat_date BETWEEN ? AND ?
+        ORDER BY ds.stat_date ASC
+    )");
+    q.addBindValue(exe_filename);
+    q.addBindValue(date_from.toString("yyyy-MM-dd"));
+    q.addBindValue(date_to.toString("yyyy-MM-dd"));
+    if (!q.exec()) {
+        qDebug() << "Failed to get week app data: " << q.lastError().text();
+        return std::vector<int64_t>(7, 0);
+    }
+
+    std::vector<int64_t> res(7, 0);
+    while (q.next()) {
+        QDate date = q.value(0).toDate();
+        int64_t index = date_from.daysTo(date);
+
+        if (index < 0 || index >= 7) {
+            qDebug() << "Wrong index week app data";
+            return std::vector<int64_t>(7, 0);
+        }
         res[index] = q.value(1).toLongLong();
     }
     return res;

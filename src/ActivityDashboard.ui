@@ -254,7 +254,7 @@
            </font>
           </property>
           <property name="text">
-           <string>Total Activity (click on a bar for details)</string>
+           <string>Daily Activity (click on a bar for details)</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -267,7 +267,7 @@
            <widget class="QToolButton" name="btnDailyPrev">
             <property name="minimumSize">
              <size>
-              <width>30</width>
+              <width>50</width>
               <height>100</height>
              </size>
             </property>
@@ -290,7 +290,7 @@
            <widget class="QToolButton" name="btnDailyNext">
             <property name="minimumSize">
              <size>
-              <width>30</width>
+              <width>50</width>
               <height>100</height>
              </size>
             </property>
@@ -317,7 +317,7 @@
            </font>
           </property>
           <property name="text">
-           <string>Click an application from the Overview</string>
+           <string>App Details (click an application from the Overview)</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -330,7 +330,7 @@
            <widget class="QToolButton" name="btnPrevWeek">
             <property name="minimumSize">
              <size>
-              <width>30</width>
+              <width>50</width>
               <height>100</height>
              </size>
             </property>
@@ -353,7 +353,7 @@
            <widget class="QToolButton" name="btnNextWeek">
             <property name="minimumSize">
              <size>
-              <width>30</width>
+              <width>50</width>
               <height>100</height>
              </size>
             </property>
