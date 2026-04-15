@@ -5,8 +5,13 @@
 #include <QBarSeries>
 #include <QBarCategoryAxis>
 #include <QValueAxis>
+#include <QGraphicsOpacityEffect>
+#include <QPropertyAnimation>
 #include "ActivityDashboard.h"
 #include "ui_ActivityDashboard.h"
+
+// TODO: Добавить в настройках приложений опцию: вернуть скрытые приложения
+// TODO: Добавить QColorDialog в настройках категорий
 
 ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget *parent) :
     QMainWindow(parent), ui(new Ui::ActivityDashboard), database_manager(database_manager),
@@ -26,9 +31,16 @@ ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget 
     ui->tableOverviewList->hideColumn(2); // exe_filename
     ui->tableOverviewList->hideColumn(3); // is_hidden
     ui->tableOverviewList->hideColumn(4); // category_id
+    ui->tableOverviewList->setContextMenuPolicy(Qt::CustomContextMenu);
+    ui->lblSavedStatus->hide();
 
-    connect(ui->tableOverviewList, &QTableWidget::cellClicked, this, &ActivityDashboard::tableItemClicked);
-    connect(ui->tableOverviewList, &QTableWidget::cellDoubleClicked, this, &ActivityDashboard::tableItemDoubleClicked);
+    connect(ui->tableOverviewList, &QTableWidget::cellClicked, this, &ActivityDashboard::tableItemLeftClicked);
+    connect(ui->tableOverviewList, &QTableWidget::customContextMenuRequested, this, [this](const QPoint &pos){
+        QTableWidgetItem *item = ui->tableOverviewList->itemAt(pos);
+        if (item) {
+            tableItemRightClicked(item->row());
+        }
+    });
     connect(ui->dateEditFrom, &QDateEdit::dateChanged, this, [this](){
        isDateToLastEdited = false;
        refreshData();
@@ -51,6 +63,7 @@ ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget 
     connect(ui->btnNextWeek, &QToolButton::clicked, this, [this](){
         ui->dateEditFrom->setDate(ui->dateEditFrom->date().addDays(7));
     });
+    connect(ui->btnSaveSettings, &QPushButton::clicked, this, &ActivityDashboard::saveAppSettings);
 
     createMenu();
     tray_icon->setContextMenu(tray_menu);
@@ -190,11 +203,12 @@ void ActivityDashboard::refreshOverview(QDate &date_from, QDate &date_to) {
             connect(slice, &QPieSlice::hovered, this, [slice](bool flag){
                 slice->setExploded(flag);
             });
-            connect(slice, &QPieSlice::clicked, this, [this, i](){
-                tableItemClicked(i);
-            });
-            connect(slice, &QPieSlice::doubleClicked, this, [this, i](){
-                tableItemDoubleClicked(i);
+            connect(slice, &QPieSlice::pressed, this, [this, i](){
+                if (QGuiApplication::mouseButtons() & Qt::LeftButton) {
+                    tableItemLeftClicked(i);
+                } else if (QGuiApplication::mouseButtons() & Qt::RightButton) {
+                    tableItemRightClicked(i);
+                }
             });
         } else {
             others_time += app_stats.total_time;
@@ -253,12 +267,12 @@ void ActivityDashboard::updateActiveApp(int row) {
     active_app.category_id = table->item(row, 4)->text().toInt();
 }
 
-void ActivityDashboard::tableItemClicked(int row) {
+void ActivityDashboard::tableItemLeftClicked(int row) {
     updateActiveApp(row);
     ui->tabWidget->setCurrentIndex(2);
 }
 
-void ActivityDashboard::tableItemDoubleClicked(int row) {
+void ActivityDashboard::tableItemRightClicked(int row) {
     updateActiveApp(row);
     ui->editSettingsPath->setText(active_app.exe_filename);
     ui->editSettingsName->setText(active_app.display_name);
@@ -377,4 +391,29 @@ void ActivityDashboard::refreshDetails(QDate &date_from, QDate &date_to) {
 
     auto bar_set = setupWeekChart(data, chart);
     bar_set->setColor("orange");
+}
+
+void ActivityDashboard::saveAppSettings() {
+    QString exe_filename = ui->editSettingsPath->text();
+    QString display_name = ui->editSettingsName->text();
+    int category_id = ui->comboSettingsCategory->currentData().toInt();
+    bool is_hidden = ui->checkSettingsHidden->isChecked();
+    if (exe_filename.isEmpty() || display_name.isEmpty()) {
+        ui->lblSavedStatus->setText("Incorrect input");
+        ui->lblSavedStatus->setStyleSheet("QLabel { color : red; }");
+    } else {
+        database_manager->updateAppInfo({exe_filename, display_name, is_hidden, category_id,0});
+        ui->lblSavedStatus->setText("Saved!");
+        ui->lblSavedStatus->setStyleSheet("QLabel { color : #4CAF50; }");
+    }
+    ui->lblSavedStatus->show();
+    QGraphicsOpacityEffect *eff = new QGraphicsOpacityEffect(this);
+    ui->lblSavedStatus->setGraphicsEffect(eff);
+    QPropertyAnimation *a = new QPropertyAnimation(eff, "opacity");
+    a->setDuration(2000);
+    a->setStartValue(1);
+    a->setEndValue(0);
+    a->setEasingCurve(QEasingCurve::InQuad);
+    a->start(QPropertyAnimation::DeleteWhenStopped);
+    connect(a, &QPropertyAnimation::finished, ui->lblSavedStatus, &QLabel::hide);
 }

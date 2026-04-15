@@ -279,3 +279,21 @@ std::vector<int64_t> DatabaseManager::getWeekUpdatedAppStats(const QString &exe_
     }
     return res;
 }
+
+void DatabaseManager::updateAppInfo(const AppStats &app_stats) {
+    QSqlQuery q(db);
+
+    q.prepare(R"(
+        UPDATE applications
+        SET display_name = ?, is_hidden = ?, category_id = ?
+        WHERE exe_filename = ?
+    )");
+    q.addBindValue(app_stats.display_name);
+    q.addBindValue(app_stats.is_hidden);
+    q.addBindValue(app_stats.category_id);
+    q.addBindValue(app_stats.exe_filename);
+
+    if (!q.exec()) {
+        qDebug() << "Failed to update App info: " << q.lastError().text();
+    }
+}

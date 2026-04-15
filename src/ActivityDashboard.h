@@ -10,8 +10,6 @@
 #include "DatabaseManager.h"
 #include "Category.h"
 
-// TODO: Добавить в настройках приложений опцию: вернуть скрытые приложения
-
 QT_BEGIN_NAMESPACE
 namespace Ui { class ActivityDashboard; }
 QT_END_NAMESPACE
@@ -41,6 +39,7 @@ class ActivityDashboard : public QMainWindow {
     QBarSet* setupWeekChart(std::vector<int64_t>& data, QChart* chart);
     void refreshDailyActivity(QDate &date_from, QDate &date_to);
     void refreshDetails(QDate &date_from, QDate &date_to);
+    void saveAppSettings();
 
  protected:
     void closeEvent(QCloseEvent *event) override;
@@ -48,8 +47,8 @@ class ActivityDashboard : public QMainWindow {
  private slots:
     void refreshData();
     void iconActivated(QSystemTrayIcon::ActivationReason activation_reason);
-    void tableItemClicked(int row);
-    void tableItemDoubleClicked(int row);
+    void tableItemLeftClicked(int row);
+    void tableItemRightClicked(int row);
 };
 
 #endif //ACTIVITY_INSIGHT_SRC_ACTIVITYDASHBOARD_H_
