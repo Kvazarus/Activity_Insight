@@ -14,6 +14,8 @@ DatabaseManager::DatabaseManager(QObject *parent) : QObject(parent) {
     if (!ok) {
         throw std::runtime_error("Can't create and open database");
     }
+    QSqlQuery q(db);
+    q.exec("PRAGMA foreign_keys = ON;");
 }
 
 void DatabaseManager::init() {
@@ -30,11 +32,6 @@ void DatabaseManager::init() {
                 is_productive BOOL DEFAULT 1
             );
         )",
-        // Если такая категория уже есть, то из-за уникальности имен выражение проигнорируется
-        R"(
-            INSERT OR IGNORE INTO categories (name, color)
-            VALUES ('Uncategorized', '#595959')
-        )",
         // is_hidden на случай если юзер решит что-то скрыть
         R"(
             CREATE TABLE IF NOT EXISTS applications (
@@ -44,7 +41,7 @@ void DatabaseManager::init() {
                 is_hidden BOOL DEFAULT 0,
                 category_id INTEGER DEFAULT 1,
                 FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET DEFAULT
-            )
+            );
         )",
         R"(
             CREATE TABLE IF NOT EXISTS activity_logs (
@@ -52,7 +49,7 @@ void DatabaseManager::init() {
                 log_date DATE DEFAULT (date('now', 'localtime')),
                 window_title TEXT,
                 time_in_seconds INTEGER NOT NULL
-            )
+            );
         )",
         R"(
             CREATE TABLE IF NOT EXISTS daily_stats (
@@ -61,7 +58,7 @@ void DatabaseManager::init() {
                 total_time INTEGER NOT NULL,
                 PRIMARY KEY (stat_date, app_id),
                 FOREIGN KEY (app_id) REFERENCES applications(id)
-            )
+            );
         )",
         R"(
             CREATE TABLE IF NOT EXISTS focus_sessions (
@@ -70,16 +67,35 @@ void DatabaseManager::init() {
                 end_time INTEGER,
                 planned_duration INTEGER,
                 status TEXT CHECK( status IN ('COMPLETED', 'INTERRUPTED', 'FAILED', 'RUNNING') ) DEFAULT 'RUNNING'
-            )
+            );
         )"
     };
 
-    for (auto& query : init_queries) {
+    for (auto &query : init_queries) {
         if (!q.exec(query)) {
             qDebug() << "Error during database initialization";
             qDebug() << "Query: " << query;
             qDebug() << "Error: " << q.lastError().text();
         }
+    }
+
+    // Проверка на самый первый запуск программы
+    if (q.exec("SELECT count(*) from categories")) {
+        if (q.next() && q.value(0).toInt() == 0) {
+            if (!q.exec(R"(
+                INSERT INTO categories (name, color, is_productive)
+                VALUES ('Uncategorized', '#9E9E9E', 1),
+                       ('Work', '#2196F3', 1),
+                       ('Learning', '#4CAF50', 1),
+                       ('Entertainment', '#FF9800', 0)
+            )")) {
+                qDebug() << "Error during database initialization";
+                qDebug() << "Error: " << q.lastError().text();
+            }
+        }
+    } else {
+        qDebug() << "Error during database initialization";
+        qDebug() << "Error: " << q.lastError().text();
     }
 }
 
@@ -297,3 +313,41 @@ void DatabaseManager::updateAppInfo(const AppStats &app_stats) {
         qDebug() << "Failed to update App info: " << q.lastError().text();
     }
 }
+
+std::vector<std::pair<QString, QString>> DatabaseManager::getHiddenApps() {
+    QSqlQuery q(db);
+
+    q.prepare(R"(
+        SELECT exe_filename, display_name
+        FROM applications
+        WHERE is_hidden = 1
+    )");
+
+    if (!q.exec()) {
+        qDebug() << "Error when getting hidden apps";
+        return {};
+    }
+
+    std::vector<std::pair<QString, QString>> hidden_apps;
+    while (q.next()) {
+        hidden_apps.emplace_back(q.value(0).toString(), q.value(1).toString());
+    }
+    return hidden_apps;
+}
+
+void DatabaseManager::restoreHiddenApp(const QString &exe_filename) {
+    QSqlQuery q(db);
+
+    q.prepare(R"(
+        UPDATE applications
+        SET is_hidden = 0
+        WHERE exe_filename = ?
+    )");
+    q.addBindValue(exe_filename);
+
+    if (!q.exec()) {
+        qDebug() << "Error when restoring hidden app";
+    }
+}
+
+

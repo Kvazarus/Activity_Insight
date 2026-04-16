@@ -125,6 +125,68 @@ void setupAppStyle(QApplication& a) {
         border-radius: 4px;
         padding: 4px;
     }
+
+    /* --- Group Box --- */
+    QGroupBox {
+        background-color: transparent;
+        border: 1px solid #444;
+        border-radius: 6px;
+        margin-top: 18px;
+        padding-top: 15px;
+        padding-bottom: 5px;
+        font-size: 16px;
+        font-weight: bold;
+    }
+    QGroupBox::title {
+        subcontrol-origin: margin;
+        subcontrol-position: top center;
+        padding: 0 10px;
+    }
+
+    /* --- List Widget (Hidden Apps) --- */
+    QListWidget {
+        background-color: #2b2b2b;
+        color: #ffffff;
+        border: 1px solid #444;
+        border-radius: 4px;
+        padding: 5px;
+        font-size: 13px;
+        outline: none;
+    }
+    QListWidget::item {
+        padding: 8px 12px;
+        border-radius: 4px;
+        margin-bottom: 2px;
+    }
+    QListWidget::item:hover {
+        background-color: #383838;
+    }
+    QListWidget::item:selected {
+        background-color: #0D6EFD;
+        color: white;
+    }
+
+    /* --- ScrollBars --- */
+    QScrollBar:vertical {
+        border: none;
+        background: #1e1e1e;
+        width: 10px;
+        margin: 0px 0px 0px 0px;
+    }
+    QScrollBar::handle:vertical {
+        background: #555;
+        min-height: 20px;
+        border-radius: 5px;
+    }
+    QScrollBar::handle:vertical:hover {
+        background: #777;
+    }
+    QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+        height: 0px;
+    }
+    QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+        background: none;
+    }
     )";
 
     a.setStyleSheet(styleSheet);

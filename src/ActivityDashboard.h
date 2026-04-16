@@ -40,6 +40,8 @@ class ActivityDashboard : public QMainWindow {
     void refreshDailyActivity(QDate &date_from, QDate &date_to);
     void refreshDetails(QDate &date_from, QDate &date_to);
     void saveAppSettings();
+    void restoreHiddenApp();
+    void updateHiddenAppsGroupBox();
 
  protected:
     void closeEvent(QCloseEvent *event) override;

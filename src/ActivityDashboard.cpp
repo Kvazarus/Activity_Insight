@@ -12,6 +12,7 @@
 
 // TODO: Добавить в настройках приложений опцию: вернуть скрытые приложения
 // TODO: Добавить QColorDialog в настройках категорий
+// TODO: Добавить в Overview категорий разные метрики
 
 ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget *parent) :
     QMainWindow(parent), ui(new Ui::ActivityDashboard), database_manager(database_manager),
@@ -64,6 +65,9 @@ ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget 
         ui->dateEditFrom->setDate(ui->dateEditFrom->date().addDays(7));
     });
     connect(ui->btnSaveSettings, &QPushButton::clicked, this, &ActivityDashboard::saveAppSettings);
+    connect(ui->btnRestoreHidden, &QPushButton::clicked, this, &ActivityDashboard::restoreHiddenApp);
+
+    updateHiddenAppsGroupBox();
 
     createMenu();
     tray_icon->setContextMenu(tray_menu);
@@ -278,11 +282,17 @@ void ActivityDashboard::tableItemRightClicked(int row) {
     ui->editSettingsName->setText(active_app.display_name);
 
     ui->comboSettingsCategory->clear();
-    for(auto &[ind, cat] : categories) {
-        ui->comboSettingsCategory->addItem(cat.name, ind);
+    int ind = 0;
+    for(auto &[id, cat] : categories) {
+        ui->comboSettingsCategory->addItem(cat.name, id);
+        if (id == active_app.category_id) {
+            ui->comboSettingsCategory->setCurrentIndex(ind);
+        }
+        ind++;
     }
 
     ui->checkSettingsHidden->setCheckState(active_app.is_hidden ? Qt::CheckState::Checked : Qt::CheckState::Unchecked);
+    updateHiddenAppsGroupBox();
     ui->tabWidget->setCurrentIndex(3);
 }
 
@@ -393,6 +403,23 @@ void ActivityDashboard::refreshDetails(QDate &date_from, QDate &date_to) {
     bar_set->setColor("orange");
 }
 
+void ActivityDashboard::updateHiddenAppsGroupBox() {
+    auto hidden_apps = database_manager->getHiddenApps();
+    if (hidden_apps.empty()) {
+        ui->groupBoxHiddenApps->hide();
+        return;
+    }
+    ui->groupBoxHiddenApps->show();
+
+    ui->listHiddenApps->clear();
+    for (auto &[exe_filename, display_name] : hidden_apps) {
+        auto new_item = new QListWidgetItem();
+        new_item->setText(display_name);
+        new_item->setData(Qt::UserRole, QVariant(exe_filename));
+        ui->listHiddenApps->addItem(new_item);
+    }
+}
+
 void ActivityDashboard::saveAppSettings() {
     QString exe_filename = ui->editSettingsPath->text();
     QString display_name = ui->editSettingsName->text();
@@ -405,6 +432,12 @@ void ActivityDashboard::saveAppSettings() {
         database_manager->updateAppInfo({exe_filename, display_name, is_hidden, category_id,0});
         ui->lblSavedStatus->setText("Saved!");
         ui->lblSavedStatus->setStyleSheet("QLabel { color : #4CAF50; }");
+        if (active_app.is_hidden != is_hidden) {
+            updateHiddenAppsGroupBox();
+        }
+        active_app.display_name = display_name;
+        active_app.category_id = category_id;
+        active_app.is_hidden = is_hidden;
     }
     ui->lblSavedStatus->show();
     QGraphicsOpacityEffect *eff = new QGraphicsOpacityEffect(this);
@@ -416,4 +449,17 @@ void ActivityDashboard::saveAppSettings() {
     a->setEasingCurve(QEasingCurve::InQuad);
     a->start(QPropertyAnimation::DeleteWhenStopped);
     connect(a, &QPropertyAnimation::finished, ui->lblSavedStatus, &QLabel::hide);
+}
+
+void ActivityDashboard::restoreHiddenApp() {
+    QListWidgetItem *current_item = ui->listHiddenApps->currentItem();
+    if (current_item) {
+        QString exe_filename = current_item->data(Qt::UserRole).toString();
+        database_manager->restoreHiddenApp(exe_filename);
+        updateHiddenAppsGroupBox();
+        if (active_app.exe_filename == exe_filename) {
+            active_app.is_hidden = false;
+            ui->checkSettingsHidden->setCheckState(Qt::CheckState::Unchecked);
+        }
+    }
 }
