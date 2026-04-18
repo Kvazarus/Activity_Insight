@@ -200,6 +200,51 @@ std::vector<AppStats> DatabaseManager::getUpdatedDailyAppStats(const std::string
     return res;
 }
 
+std::vector<std::pair<int64_t, Category>> DatabaseManager::getUpdatedDailyCategoriesStats(const std::string &date_from,
+                                                                      const std::string &date_to) {
+    updateDailyStats();
+
+    QString q_date_from;
+    QString q_date_to;
+    if (date_from == "today") {
+        q_date_from = QDate::currentDate().toString("yyyy-MM-dd");
+    } else {
+        q_date_from = QString::fromStdString(date_from);
+    }
+    if (date_to == "today") {
+        q_date_to = QDate::currentDate().toString("yyyy-MM-dd");
+    } else {
+        q_date_to = QString::fromStdString(date_to);
+    }
+
+    QSqlQuery q(db);
+
+    q.prepare(R"(
+        SELECT c.id, c.name, c.color, c.is_productive, SUM(ds.total_time) as total_time_sum
+        FROM daily_stats ds
+        JOIN applications a ON a.id = ds.app_id
+        JOIN categories c ON c.id = a.category_id
+        WHERE NOT a.is_hidden AND ds.stat_date BETWEEN ? AND ?
+        GROUP BY c.id, c.name, c.color, c.is_productive
+        ORDER BY total_time_sum DESC
+    )");
+    q.addBindValue(q_date_from);
+    q.addBindValue(q_date_to);
+    if (!q.exec()) {
+        qDebug() << "Failed to get Categories stats data: " << q.lastError().text();
+        return {};
+    }
+
+    std::vector<std::pair<int64_t, Category>> res;
+    while (q.next()) {
+        res.push_back({q.value(4).toInt(), {q.value(0).toInt(), q.value(1).toString(),
+                                              q.value(2).toString(), q.value(3).toBool()}});
+    }
+    return res;
+}
+
+
+
 std::unordered_map<int, Category> DatabaseManager::getCategories() {
     std::unordered_map<int, Category> categories;
     QSqlQuery q(db);
@@ -349,5 +394,3 @@ void DatabaseManager::restoreHiddenApp(const QString &exe_filename) {
         qDebug() << "Error when restoring hidden app";
     }
 }
-
-

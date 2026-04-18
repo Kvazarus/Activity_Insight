@@ -317,7 +317,7 @@
            </font>
           </property>
           <property name="text">
-           <string>App Details (click an application from the Overview)</string>
+           <string>App Details</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignmentFlag::AlignCenter</set>

@@ -29,11 +29,13 @@ ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget 
     ui->tableOverviewList->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
     ui->tableOverviewList->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
     ui->tableOverviewList->setColumnCount(5);
-    ui->tableOverviewList->hideColumn(2); // exe_filename
+    ui->tableOverviewList->hideColumn(2); // exe_filename or id (category)
     ui->tableOverviewList->hideColumn(3); // is_hidden
     ui->tableOverviewList->hideColumn(4); // category_id
     ui->tableOverviewList->setContextMenuPolicy(Qt::CustomContextMenu);
     ui->lblSavedStatus->hide();
+    ui->comboMode->setCurrentIndex(0);
+    ui->tabWidget->setCurrentIndex(0);
 
     connect(ui->tableOverviewList, &QTableWidget::cellClicked, this, &ActivityDashboard::tableItemLeftClicked);
     connect(ui->tableOverviewList, &QTableWidget::customContextMenuRequested, this, [this](const QPoint &pos){
@@ -66,6 +68,22 @@ ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget 
     });
     connect(ui->btnSaveSettings, &QPushButton::clicked, this, &ActivityDashboard::saveAppSettings);
     connect(ui->btnRestoreHidden, &QPushButton::clicked, this, &ActivityDashboard::restoreHiddenApp);
+    connect(ui->comboMode, &QComboBox::currentIndexChanged, this, [this](int index) {
+        switch (index) {
+            case 0:
+                current_mode = Mode::Applications;
+                break;
+            case 1:
+                current_mode = Mode::Categories;
+                break;
+            case 2:
+                current_mode = Mode::FocusSessions;
+                break;
+            default:
+                qDebug() << "Wrong index in comboMode";
+        }
+        refreshData();
+    });
 
     updateHiddenAppsGroupBox();
 
@@ -79,7 +97,6 @@ ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget 
 
     categories = database_manager->getCategories();
     QMainWindow::showMaximized();
-    ui->tabWidget->setCurrentIndex(0);
     refreshData();
 }
 
@@ -159,14 +176,32 @@ QString ActivityDashboard::getDisplayTime(int64_t time) {
 }
 
 void ActivityDashboard::refreshOverview(QDate &date_from, QDate &date_to) {
-    auto data = database_manager->getUpdatedDailyAppStats(date_from.toString("yyyy-MM-dd").toStdString(),
-                                                          date_to.toString("yyyy-MM-dd").toStdString());
-    int64_t time_sum = std::accumulate(data.begin(), data.end(), (int64_t) 0,
-                                       [](auto& a, auto& b) {
-        return a + b.total_time;
-    });
+    bool is_app_mode = current_mode == Mode::Applications;
+    int64_t time_sum;
+    std::vector<AppStats> data_apps;
+    std::vector<std::pair<int64_t, Category>> data_categories;
+    if (is_app_mode) {
+        data_apps = database_manager->getUpdatedDailyAppStats(date_from.toString("yyyy-MM-dd").toStdString(),
+                                                              date_to.toString("yyyy-MM-dd").toStdString());
+        time_sum = std::accumulate(data_apps.begin(), data_apps.end(), (int64_t) 0,
+                                           [](auto& a, auto& b) {
+            return a + b.total_time;
+        });
+    } else {
+        data_categories = database_manager->getUpdatedDailyCategoriesStats(date_from.toString("yyyy-MM-dd").toStdString(),
+                                                              date_to.toString("yyyy-MM-dd").toStdString());
+        time_sum = std::accumulate(data_categories.begin(), data_categories.end(), (int64_t) 0,
+                                   [](auto& a, auto& b) {
+                                       return a + b.first;
+        });
+    }
+
     ui->lblTotalTime->setText("Total time: " + getDisplayTime(time_sum));
-    ui->tableOverviewList->setRowCount(data.size());
+    if (is_app_mode) {
+        ui->tableOverviewList->setRowCount(data_apps.size());
+    } else {
+        ui->tableOverviewList->setRowCount(data_categories.size());
+    }
 
     QChart* chart = ui->chartPieOverview->chart();
     if (!chart) {
@@ -176,11 +211,11 @@ void ActivityDashboard::refreshOverview(QDate &date_from, QDate &date_to) {
     }
     chart->removeAllSeries();
 
-    auto empty_data_label = ui->chartPieOverview->findChild<QLabel*>("emptyDataLabelOverviewApps");
-    if (data.empty()) {
+    auto empty_data_label = ui->chartPieOverview->findChild<QLabel*>("emptyDataLabelOverview");
+    if ((is_app_mode && data_apps.empty()) || (!is_app_mode && data_categories.empty())) {
         if (!empty_data_label) {
             empty_data_label = new QLabel("No data for these dates", ui->chartPieOverview);
-            empty_data_label->setObjectName("emptyDataLabelOverviewApps");
+            empty_data_label->setObjectName("emptyDataLabelOverview");
             empty_data_label->setAlignment(Qt::AlignCenter);
             empty_data_label->setStyleSheet("QLabel { color : orange; font-size : 20px; }");
 
@@ -199,10 +234,11 @@ void ActivityDashboard::refreshOverview(QDate &date_from, QDate &date_to) {
 
     auto *pie_series = new QPieSeries;
     int64_t others_time = 0;
-    for (int i = 0; i < data.size(); i++) {
-        auto& app_stats = data[i];
-        QPieSlice *slice = new QPieSlice(app_stats.display_name, app_stats.total_time);
-        if (app_stats.total_time * 20 >= time_sum) {
+    for (int i = 0; i < (is_app_mode ? data_apps.size() : data_categories.size()); i++) {
+        QString name = is_app_mode ? data_apps[i].display_name : data_categories[i].second.name;
+        int64_t total_time = is_app_mode ? data_apps[i].total_time : data_categories[i].first;
+        QPieSlice *slice = new QPieSlice(name, total_time);
+        if (total_time * 20 >= time_sum) {
             pie_series->append(slice);
             connect(slice, &QPieSlice::hovered, this, [slice](bool flag){
                 slice->setExploded(flag);
@@ -215,17 +251,17 @@ void ActivityDashboard::refreshOverview(QDate &date_from, QDate &date_to) {
                 }
             });
         } else {
-            others_time += app_stats.total_time;
+            others_time += total_time;
         }
-        QTableWidgetItem *app_item = new QTableWidgetItem(app_stats.display_name);
+        QTableWidgetItem *app_item = new QTableWidgetItem(name);
         ui->tableOverviewList->setItem(i, 0, app_item);
-        QTableWidgetItem *time_item = new QTableWidgetItem(getDisplayTime(app_stats.total_time));
+        QTableWidgetItem *time_item = new QTableWidgetItem(getDisplayTime(total_time));
         ui->tableOverviewList->setItem(i, 1, time_item);
-        QTableWidgetItem *exe_filename_item = new QTableWidgetItem(app_stats.exe_filename);
-        ui->tableOverviewList->setItem(i, 2, exe_filename_item);
-        QTableWidgetItem *is_hidden_item = new QTableWidgetItem(QString::number(app_stats.is_hidden));
+        QTableWidgetItem *exe_filename_or_id_item = new QTableWidgetItem(is_app_mode ? data_apps[i].exe_filename : QString::number(data_categories[i].second.id));
+        ui->tableOverviewList->setItem(i, 2, exe_filename_or_id_item);
+        QTableWidgetItem *is_hidden_item = new QTableWidgetItem(is_app_mode ? QString::number(data_apps[i].is_hidden) : "");
         ui->tableOverviewList->setItem(i, 3, is_hidden_item);
-        QTableWidgetItem *category_id_item = new QTableWidgetItem(QString::number(app_stats.category_id));
+        QTableWidgetItem *category_id_item = new QTableWidgetItem(is_app_mode ? QString::number(data_apps[i].category_id) : "");
         ui->tableOverviewList->setItem(i, 4, category_id_item);
     }
     if (others_time > 0) {
@@ -272,27 +308,37 @@ void ActivityDashboard::updateActiveApp(int row) {
 }
 
 void ActivityDashboard::tableItemLeftClicked(int row) {
-    updateActiveApp(row);
+    if (current_mode == Mode::Applications) {
+        updateActiveApp(row);
+    } else {
+        active_category_id = ui->tableOverviewList->item(row, 2)->text().toInt();
+    }
     ui->tabWidget->setCurrentIndex(2);
 }
 
 void ActivityDashboard::tableItemRightClicked(int row) {
-    updateActiveApp(row);
-    ui->editSettingsPath->setText(active_app.exe_filename);
-    ui->editSettingsName->setText(active_app.display_name);
+    if (current_mode == Mode::Applications) {
+        updateActiveApp(row);
 
-    ui->comboSettingsCategory->clear();
-    int ind = 0;
-    for(auto &[id, cat] : categories) {
-        ui->comboSettingsCategory->addItem(cat.name, id);
-        if (id == active_app.category_id) {
-            ui->comboSettingsCategory->setCurrentIndex(ind);
+        ui->editSettingsPath->setText(active_app.exe_filename);
+        ui->editSettingsName->setText(active_app.display_name);
+
+        ui->comboSettingsCategory->clear();
+        int ind = 0;
+        for(auto &[id, cat] : categories) {
+            ui->comboSettingsCategory->addItem(cat.name, id);
+            if (id == active_app.category_id) {
+                ui->comboSettingsCategory->setCurrentIndex(ind);
+            }
+            ind++;
         }
-        ind++;
-    }
 
-    ui->checkSettingsHidden->setCheckState(active_app.is_hidden ? Qt::CheckState::Checked : Qt::CheckState::Unchecked);
-    updateHiddenAppsGroupBox();
+        ui->checkSettingsHidden->setCheckState(active_app.is_hidden ? Qt::CheckState::Checked : Qt::CheckState::Unchecked);
+        updateHiddenAppsGroupBox();
+    } else {
+        active_category_id = ui->tableOverviewList->item(row, 2)->text().toInt();
+        // do something here later
+    }
     ui->tabWidget->setCurrentIndex(3);
 }
 
@@ -357,6 +403,7 @@ QBarSet* ActivityDashboard::setupWeekChart(std::vector<int64_t> &data, QChart* c
 }
 
 void ActivityDashboard::refreshDailyActivity(QDate &date_from, QDate &date_to) {
+    // По сути категории и приложения по суммарному времени совпадают, поэтому для категорий тут можно ничего не менять
     auto data = database_manager->getWeekUpdatedDailyStats(date_from, date_to);
 
     QChart* chart = ui->chartBarDailyTotal->chart();

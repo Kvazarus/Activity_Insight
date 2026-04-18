@@ -9,6 +9,7 @@
 
 #include "DatabaseManager.h"
 #include "Category.h"
+#include "Mode.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class ActivityDashboard; }
@@ -30,6 +31,8 @@ class ActivityDashboard : public QMainWindow {
     bool isDateToLastEdited = true;
     AppStats active_app;
     std::unordered_map<int, Category> categories;
+    int active_category_id = 0;
+    Mode current_mode = Mode::Applications;
 
     QString getDisplayTime(int64_t time);
     void createMenu();
