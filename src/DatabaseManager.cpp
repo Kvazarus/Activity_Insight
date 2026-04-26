@@ -341,6 +341,47 @@ std::vector<int64_t> DatabaseManager::getWeekUpdatedAppStats(const QString &exe_
     return res;
 }
 
+std::vector<int64_t> DatabaseManager::getWeekUpdatedCategoryStats(int category_id, QDate &date_from, QDate &date_to) {
+    updateDailyStats();
+
+    if (date_from.daysTo(date_to) != 6) {
+        qDebug() << "Gap between dates does not equal week";
+        return std::vector<int64_t>(7, 0);
+    }
+
+    QSqlQuery q(db);
+
+    q.prepare(R"(
+        SELECT ds.stat_date, SUM(ds.total_time)
+        FROM daily_stats ds
+        JOIN applications a ON a.id = ds.app_id
+        WHERE a.category_id = ? AND ds.stat_date BETWEEN ? AND ?
+        GROUP BY ds.stat_date
+        ORDER BY ds.stat_date ASC
+    )");
+    q.addBindValue(category_id);
+    q.addBindValue(date_from.toString("yyyy-MM-dd"));
+    q.addBindValue(date_to.toString("yyyy-MM-dd"));
+    if (!q.exec()) {
+        qDebug() << "Failed to get week category data: " << q.lastError().text();
+        return std::vector<int64_t>(7, 0);
+    }
+
+    std::vector<int64_t> res(7, 0);
+    while (q.next()) {
+        QDate date = q.value(0).toDate();
+        int64_t index = date_from.daysTo(date);
+
+        if (index < 0 || index >= 7) {
+            qDebug() << "Wrong index week category data";
+            return std::vector<int64_t>(7, 0);
+        }
+        res[index] = q.value(1).toLongLong();
+    }
+    return res;
+}
+
+
 void DatabaseManager::updateAppInfo(const AppStats &app_stats) {
     QSqlQuery q(db);
 

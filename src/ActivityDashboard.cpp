@@ -137,7 +137,9 @@ void ActivityDashboard::refreshData() {
     QDate date_from = ui->dateEditFrom->date();
     QDate date_to = ui->dateEditTo->date();
 
-    if (ui->tabWidget->currentIndex() == 1 || ui->tabWidget->currentIndex() == 2) {
+    if (ui->tabWidget->currentIndex() == 0) {
+        refreshOverview(date_from, date_to);
+    } else if (ui->tabWidget->currentIndex() == 1 || ui->tabWidget->currentIndex() == 2) {
         updateDatesToWeekGap(date_from, date_to);
 
         ui->dateEditFrom->blockSignals(true);
@@ -152,8 +154,12 @@ void ActivityDashboard::refreshData() {
         } else {
             refreshDetails(date_from, date_to);
         }
-    } else {
-        refreshOverview(date_from, date_to);
+    } else if (ui->tabWidget->currentIndex() == 3) {
+        if (current_mode == Mode::Applications) {
+            ui->stackedWidgetSettings->setCurrentIndex(0);
+        } else if (current_mode == Mode::Categories) {
+            ui->stackedWidgetSettings->setCurrentIndex(1);
+        }
     }
 }
 
@@ -238,6 +244,7 @@ void ActivityDashboard::refreshOverview(QDate &date_from, QDate &date_to) {
         QString name = is_app_mode ? data_apps[i].display_name : data_categories[i].second.name;
         int64_t total_time = is_app_mode ? data_apps[i].total_time : data_categories[i].first;
         QPieSlice *slice = new QPieSlice(name, total_time);
+        if (!is_app_mode) slice->setColor(data_categories[i].second.color);
         if (total_time * 20 >= time_sum) {
             pie_series->append(slice);
             connect(slice, &QPieSlice::hovered, this, [slice](bool flag){
@@ -419,20 +426,35 @@ void ActivityDashboard::refreshDailyActivity(QDate &date_from, QDate &date_to) {
 
 void ActivityDashboard::refreshDetails(QDate &date_from, QDate &date_to) {
     QChart* chart = ui->chartBarAppDetails->chart();
-    auto empty_data_label = ui->chartBarAppDetails->findChild<QLabel*>("emptyDataLabelDetailsApps");
+    if (!chart) {
+        chart = new QChart;
+        ui->chartBarDailyTotal->setChart(chart);
+        ui->chartBarDailyTotal->setRenderHint(QPainter::Antialiasing);
+    }
 
-    if (active_app.exe_filename.isEmpty()) {
+    auto empty_data_label = ui->chartBarAppDetails->findChild<QLabel*>("emptyDataLabelDetails");
+
+    if ((current_mode == Mode::Applications && active_app.exe_filename.isEmpty()) ||
+    (current_mode == Mode::Categories && !active_category_id)) {
         if (!empty_data_label) {
             empty_data_label = new QLabel("Click an application from the Overview", ui->chartBarAppDetails);
-            empty_data_label->setObjectName("emptyDataLabelDetailsApps");
+            empty_data_label->setObjectName("emptyDataLabelDetails");
             empty_data_label->setAlignment(Qt::AlignCenter);
             empty_data_label->setStyleSheet("QLabel { color : orange; font-size : 20px; }");
 
             QVBoxLayout* overlay_layout = new QVBoxLayout(ui->chartBarAppDetails);
             overlay_layout->addWidget(empty_data_label);
         }
+        if (current_mode == Mode::Applications) {
+            empty_data_label->setText("Click an application from the Overview");
+            ui->lblDetailsAppName->setText("App Details");
+        } else {
+            empty_data_label->setText("Click a category from the Overview");
+            ui->lblDetailsAppName->setText("Category Details");
+        }
         empty_data_label->show();
 
+        chart->hide();
         chart->removeAllSeries();
         chart->setTheme(QChart::ChartThemeDark);
         chart->setBackgroundVisible(false);
@@ -442,12 +464,24 @@ void ActivityDashboard::refreshDetails(QDate &date_from, QDate &date_to) {
     if (empty_data_label) {
         empty_data_label->hide();
     }
+    chart->show();
 
-    ui->lblDetailsAppName->setText(active_app.display_name);
-    auto data = database_manager->getWeekUpdatedAppStats(active_app.exe_filename, date_from, date_to);
+
+    std::vector<int64_t> data;
+    if (current_mode == Mode::Applications) {
+        ui->lblDetailsAppName->setText(active_app.display_name);
+        data = database_manager->getWeekUpdatedAppStats(active_app.exe_filename, date_from, date_to);
+    } else {
+        ui->lblDetailsAppName->setText(categories[active_category_id].name);
+        data = database_manager->getWeekUpdatedCategoryStats(active_category_id, date_from, date_to);
+    }
 
     auto bar_set = setupWeekChart(data, chart);
-    bar_set->setColor("orange");
+    if (current_mode == Mode::Applications) {
+        bar_set->setColor("orange");
+    } else {
+        bar_set->setColor(categories[active_category_id].color);
+    }
 }
 
 void ActivityDashboard::updateHiddenAppsGroupBox() {
