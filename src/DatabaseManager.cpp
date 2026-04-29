@@ -435,3 +435,61 @@ void DatabaseManager::restoreHiddenApp(const QString &exe_filename) {
         qDebug() << "Error when restoring hidden app";
     }
 }
+
+void DatabaseManager::updateCategoryInfo(const Category &category) {
+    QSqlQuery q(db);
+
+    q.prepare(R"(
+        UPDATE categories
+        SET name = ?, color = ?, is_productive = ?
+        WHERE id = ?
+    )");
+    q.addBindValue(category.name);
+    q.addBindValue(category.color);
+    q.addBindValue(category.is_productive);
+    q.addBindValue(category.id);
+
+    if (!q.exec()) {
+        qDebug() << "Failed to update Category info: " << q.lastError().text();
+    }
+}
+
+int DatabaseManager::insertNewCategory(const Category &category) {
+    QSqlQuery q(db);
+
+    // Проигнорирует если уже есть с таким же именем
+    q.prepare("INSERT OR IGNORE INTO categories (name, color, is_productive) "
+              "VALUES (?, ?, ?)");
+    q.addBindValue(category.name);
+    q.addBindValue(category.color);
+    q.addBindValue(category.is_productive);
+
+    if (!q.exec()) {
+        qDebug() << "Error during insertion a new category";
+        return -1;
+    }
+
+    if (q.numRowsAffected() == 0) {
+        return 0;
+    }
+
+    return q.lastInsertId().toInt();
+}
+
+void DatabaseManager::deleteCategory(int category_id) {
+    if (category_id == 1) {
+        qDebug() << "Deleting \"Uncategorized\" is not allowed";
+        return;
+    }
+    QSqlQuery q(db);
+
+    q.prepare(R"(
+        DELETE FROM categories
+        WHERE id = ?
+    )");
+    q.addBindValue(category_id);
+
+    if (!q.exec()) {
+        qDebug() << "Failed to delete Category: " << q.lastError().text();
+    }
+}

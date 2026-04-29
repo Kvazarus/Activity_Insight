@@ -41,6 +41,17 @@ void setupAppStyle(QApplication& a) {
         background-color: #0a53be;
     }
 
+    /* --- Delete Button Override --- */
+    QPushButton#btnDeleteCategory {
+        background-color: #dc3545;
+    }
+    QPushButton#btnDeleteCategory:hover {
+        background-color: #c82333;
+    }
+    QPushButton#btnDeleteCategory:pressed {
+        background-color: #bd2130;
+    }
+
     /* --- Tables --- */
     QTableWidget {
         background-color: #1e1e1e;

@@ -7,12 +7,18 @@
 #include <QValueAxis>
 #include <QGraphicsOpacityEffect>
 #include <QPropertyAnimation>
+#include <QColorDialog>
+#include <QMessageBox>
+
 #include "ActivityDashboard.h"
 #include "ui_ActivityDashboard.h"
 
 // TODO: Добавить в настройках приложений опцию: вернуть скрытые приложения
 // TODO: Добавить QColorDialog в настройках категорий
 // TODO: Добавить в Overview категорий разные метрики
+// TODO: Мб перенести DatabaseManager в отдельный тред для безупречной отзывчивости интерфейса
+// TODO: Добавить удаление категорий + окошко для подтверждения
+
 
 ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget *parent) :
     QMainWindow(parent), ui(new Ui::ActivityDashboard), database_manager(database_manager),
@@ -33,9 +39,26 @@ ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget 
     ui->tableOverviewList->hideColumn(3); // is_hidden
     ui->tableOverviewList->hideColumn(4); // category_id
     ui->tableOverviewList->setContextMenuPolicy(Qt::CustomContextMenu);
+
+    QSizePolicy sp = ui->lblSavedStatus->sizePolicy();
+    sp.setRetainSizeWhenHidden(true);
+    ui->lblSavedStatus->setSizePolicy(sp);
+
+    sp = ui->lblCategorySavedStatus->sizePolicy();
+    sp.setRetainSizeWhenHidden(true);
+    ui->lblCategorySavedStatus->setSizePolicy(sp);
+
+    sp = ui->lblCategoryDeletedStatus->sizePolicy();
+    sp.setRetainSizeWhenHidden(true);
+    ui->lblCategoryDeletedStatus->setSizePolicy(sp);
+
     ui->lblSavedStatus->hide();
+    ui->lblCategorySavedStatus->hide();
+    ui->lblCategoryDeletedStatus->hide();
+
     ui->comboMode->setCurrentIndex(0);
     ui->tabWidget->setCurrentIndex(0);
+    ui->lblColorPreview->setProperty("category_color", default_color);
 
     connect(ui->tableOverviewList, &QTableWidget::cellClicked, this, &ActivityDashboard::tableItemLeftClicked);
     connect(ui->tableOverviewList, &QTableWidget::customContextMenuRequested, this, [this](const QPoint &pos){
@@ -84,6 +107,24 @@ ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget 
         }
         refreshData();
     });
+    connect(ui->comboEditCategory, &QComboBox::currentIndexChanged, this, [this](int index){
+       active_category_id = ui->comboEditCategory->currentData().toInt();
+       refreshCategorySettings();
+    });
+    connect(ui->btnPickColor, &QPushButton::clicked, this, [this](){
+       QColor color = QColorDialog::getColor(Qt::white, this, "Select Category Color", QColorDialog::DontUseNativeDialog);
+       if (color.isValid()) {
+           ui->lblColorPreview->setProperty("category_color", color.name());
+           ui->lblColorPreview->setStyleSheet("QLabel { background-color: " + color.name() + "; border: 1px solid #fff; border-radius: 4px; }");
+       }
+    });
+    connect(ui->btnCreateNewCategory, &QPushButton::clicked, this, [this]() {
+        active_category_id = 0;
+        ui->comboEditCategory->setPlaceholderText("New Category");
+        ui->comboEditCategory->setCurrentIndex(-1);
+    });
+    connect(ui->btnSaveCategory, &QPushButton::clicked, this, &ActivityDashboard::saveCategorySettings);
+    connect(ui->btnDeleteCategory, &QPushButton::clicked, this, &ActivityDashboard::deleteCategory);
 
     updateHiddenAppsGroupBox();
 
@@ -95,7 +136,7 @@ ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget 
     connect(tray_icon, &QSystemTrayIcon::activated, this, &ActivityDashboard::iconActivated);
     tray_icon->show();
 
-    categories = database_manager->getCategories();
+    updateCategories();
     QMainWindow::showMaximized();
     refreshData();
 }
@@ -159,6 +200,7 @@ void ActivityDashboard::refreshData() {
             ui->stackedWidgetSettings->setCurrentIndex(0);
         } else if (current_mode == Mode::Categories) {
             ui->stackedWidgetSettings->setCurrentIndex(1);
+            refreshCategorySettings();
         }
     }
 }
@@ -344,9 +386,40 @@ void ActivityDashboard::tableItemRightClicked(int row) {
         updateHiddenAppsGroupBox();
     } else {
         active_category_id = ui->tableOverviewList->item(row, 2)->text().toInt();
-        // do something here later
+        refreshCategorySettings();
     }
     ui->tabWidget->setCurrentIndex(3);
+}
+
+void ActivityDashboard::refreshCategorySettings() {
+    ui->comboEditCategory->blockSignals(true);
+    ui->comboEditCategory->clear();
+    categories_indexes.clear();
+    int ind = 0;
+    for(auto &[id, cat] : categories) {
+        ui->comboEditCategory->addItem(cat.name, id);
+        categories_indexes[id] = ind;
+        if (id == active_category_id) {
+            ui->comboEditCategory->setCurrentIndex(ind);
+        }
+        ind++;
+    }
+    ui->comboEditCategory->blockSignals(false);
+    if (ui->comboEditCategory->currentIndex() == -1 && active_category_id == 0) { // New Category
+        ui->editCategoryName->setText("");
+        QString new_color = generateRandomColor();
+        ui->lblColorPreview->setProperty("category_color", new_color);
+        ui->lblColorPreview->setStyleSheet("QLabel { background-color: " + new_color + "; border: 1px solid #fff; border-radius: 4px; }");
+        ui->checkCatProductive->setCheckState(Qt::CheckState::Checked);
+        return;
+    }
+    if (active_category_id > 0) {
+        Category active_category = categories[active_category_id];
+        ui->editCategoryName->setText(active_category.name);
+        ui->lblColorPreview->setProperty("category_color", active_category.color);
+        ui->lblColorPreview->setStyleSheet("QLabel { background-color: " + active_category.color + "; border: 1px solid #fff; border-radius: 4px; }");
+        ui->checkCatProductive->setCheckState(active_category.is_productive ? Qt::CheckState::Checked : Qt::CheckState::Unchecked);
+    }
 }
 
 void ActivityDashboard::updateDatesToWeekGap(QDate &date_from, QDate &date_to) {
@@ -435,7 +508,7 @@ void ActivityDashboard::refreshDetails(QDate &date_from, QDate &date_to) {
     auto empty_data_label = ui->chartBarAppDetails->findChild<QLabel*>("emptyDataLabelDetails");
 
     if ((current_mode == Mode::Applications && active_app.exe_filename.isEmpty()) ||
-    (current_mode == Mode::Categories && !active_category_id)) {
+    (current_mode == Mode::Categories && active_category_id <= 0)) {
         if (!empty_data_label) {
             empty_data_label = new QLabel("Click an application from the Overview", ui->chartBarAppDetails);
             empty_data_label->setObjectName("emptyDataLabelDetails");
@@ -501,6 +574,20 @@ void ActivityDashboard::updateHiddenAppsGroupBox() {
     }
 }
 
+void ActivityDashboard::inflictFadingEffectOnLabel(QLabel *label) {
+    label->show();
+    QGraphicsOpacityEffect *eff = new QGraphicsOpacityEffect(this);
+    label->setGraphicsEffect(eff);
+    QPropertyAnimation *a = new QPropertyAnimation(eff, "opacity");
+    a->setDuration(2000);
+    a->setStartValue(1);
+    a->setEndValue(0);
+    a->setEasingCurve(QEasingCurve::InQuad);
+    a->start(QPropertyAnimation::DeleteWhenStopped);
+    connect(a, &QPropertyAnimation::finished, label, &QLabel::hide);
+}
+
+
 void ActivityDashboard::saveAppSettings() {
     QString exe_filename = ui->editSettingsPath->text();
     QString display_name = ui->editSettingsName->text();
@@ -520,16 +607,8 @@ void ActivityDashboard::saveAppSettings() {
         active_app.category_id = category_id;
         active_app.is_hidden = is_hidden;
     }
-    ui->lblSavedStatus->show();
-    QGraphicsOpacityEffect *eff = new QGraphicsOpacityEffect(this);
-    ui->lblSavedStatus->setGraphicsEffect(eff);
-    QPropertyAnimation *a = new QPropertyAnimation(eff, "opacity");
-    a->setDuration(2000);
-    a->setStartValue(1);
-    a->setEndValue(0);
-    a->setEasingCurve(QEasingCurve::InQuad);
-    a->start(QPropertyAnimation::DeleteWhenStopped);
-    connect(a, &QPropertyAnimation::finished, ui->lblSavedStatus, &QLabel::hide);
+
+    inflictFadingEffectOnLabel(ui->lblSavedStatus);
 }
 
 void ActivityDashboard::restoreHiddenApp() {
@@ -543,4 +622,84 @@ void ActivityDashboard::restoreHiddenApp() {
             ui->checkSettingsHidden->setCheckState(Qt::CheckState::Unchecked);
         }
     }
+}
+
+void ActivityDashboard::updateCategories() {
+    categories = database_manager->getCategories();
+}
+
+QString ActivityDashboard::generateRandomColor() {
+    return QColor::fromRgb(QRandomGenerator::global()->generate()).name();
+}
+
+void ActivityDashboard::saveCategorySettings() {
+    QString category_name = ui->editCategoryName->text();
+    QString color = ui->lblColorPreview->property("category_color").toString();
+    bool is_productive = ui->checkCatProductive->isChecked();
+    if (category_name.isEmpty() || active_category_id == -1) {
+        ui->lblCategorySavedStatus->setText("Incorrect input");
+        ui->lblCategorySavedStatus->setStyleSheet("QLabel { color : red; }");
+    } else {
+        if (active_category_id == 0) { // New Category
+            int id = database_manager->insertNewCategory({0, category_name, color, is_productive});
+            if (id == -1) {
+                ui->lblCategorySavedStatus->setText("Something went wrong");
+                ui->lblCategorySavedStatus->setStyleSheet("QLabel { color : red; }");
+            } else if (id == 0) {
+                ui->lblCategorySavedStatus->setText("Category with this name\n already exists");
+                ui->lblCategorySavedStatus->setStyleSheet("QLabel { color : orange; }");
+            } else {
+                active_category_id = id;
+                ui->lblCategorySavedStatus->setText("Created!");
+                ui->lblCategorySavedStatus->setStyleSheet("QLabel { color : #4CAF50; }");
+            }
+        } else {
+            if (active_category_id == 1 && category_name != "Uncategorized") {
+                ui->lblCategorySavedStatus->setText("Renaming \"Uncategorized\"\n is not allowed");
+                ui->lblCategorySavedStatus->setStyleSheet("QLabel { color : orange; }");
+            } else {
+                database_manager->updateCategoryInfo({active_category_id, category_name, color, is_productive});
+                ui->lblCategorySavedStatus->setText("Saved!");
+                ui->lblCategorySavedStatus->setStyleSheet("QLabel { color : #4CAF50; }");
+            }
+        }
+        updateCategories();
+    }
+
+    inflictFadingEffectOnLabel(ui->lblCategorySavedStatus);
+    refreshCategorySettings();
+}
+
+void ActivityDashboard::deleteCategory() {
+    if (active_category_id <= 0) {
+        ui->lblCategoryDeletedStatus->setText("Category not selected");
+        ui->lblCategoryDeletedStatus->setStyleSheet("QLabel { color : red; }");
+    } else if (active_category_id == 1) {
+        ui->lblCategoryDeletedStatus->setText("Deleting \"Uncategorized\"\n is not allowed");
+        ui->lblCategoryDeletedStatus->setStyleSheet("QLabel { color : red; }");
+    } else {
+        QMessageBox message_box;
+        message_box.setIcon(QMessageBox::Question);
+        message_box.setText("Confirm Deletion");
+        message_box.setInformativeText("Are you sure you want to delete this category?\n\n"
+                    "Apps in this category will be moved to \"Uncategorized\".");
+        message_box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        message_box.setDefaultButton(QMessageBox::No);
+        int ans = message_box.exec();
+
+        if (ans == QMessageBox::Yes) {
+            database_manager->deleteCategory(active_category_id);
+            updateCategories();
+            ui->comboEditCategory->setPlaceholderText("Right click a category from Overview or choose it here");
+            ui->comboEditCategory->setCurrentIndex(-1);
+            active_category_id = -1;
+            ui->lblCategoryDeletedStatus->setText("Deleted!");
+            ui->lblCategoryDeletedStatus->setStyleSheet("QLabel { color : #FF9800; }");
+        } else {
+            return;
+        }
+    }
+
+    inflictFadingEffectOnLabel(ui->lblCategoryDeletedStatus);
+    refreshCategorySettings();
 }

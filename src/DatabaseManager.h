@@ -25,6 +25,9 @@ class DatabaseManager : public QObject {
     void updateAppInfo(const AppStats& app_stats);
     std::vector<std::pair<QString, QString>> getHiddenApps();
     void restoreHiddenApp(const QString &exe_filename);
+    void updateCategoryInfo(const Category& category);
+    int insertNewCategory(const Category& category);
+    void deleteCategory(int category_id);
 };
 
 #endif // ACTIVITY_INSIGHT_DATABASE_MANAGER

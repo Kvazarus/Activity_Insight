@@ -656,6 +656,9 @@
                      <height>0</height>
                     </size>
                    </property>
+                   <property name="placeholderText">
+                    <string>Right click a category from Overview or choose it here</string>
+                   </property>
                   </widget>
                  </item>
                  <item>
@@ -668,7 +671,7 @@
                    </property>
                    <property name="sizeHint" stdset="0">
                     <size>
-                     <width>80</width>
+                     <width>40</width>
                      <height>20</height>
                     </size>
                    </property>
@@ -804,9 +807,66 @@
                </spacer>
               </item>
               <item>
+               <layout class="QVBoxLayout" name="verticalLayoutCatDeleteBtn">
+                <item>
+                 <widget class="QPushButton" name="btnDeleteCategory">
+                  <property name="minimumSize">
+                   <size>
+                    <width>175</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                  <property name="text">
+                   <string>Delete Category</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="lblCategoryDeletedStatus">
+                  <property name="font">
+                   <font>
+                    <bold>true</bold>
+                   </font>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">color: #FF9800;</string>
+                  </property>
+                  <property name="text">
+                   <string>Deleted!</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignmentFlag::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_5">
+                <property name="orientation">
+                 <enum>Qt::Orientation::Horizontal</enum>
+                </property>
+                <property name="sizeType">
+                 <enum>QSizePolicy::Policy::Maximum</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>15</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
                <layout class="QVBoxLayout" name="verticalLayoutCatSaveBtn">
                 <item>
                  <widget class="QPushButton" name="btnSaveCategory">
+                  <property name="minimumSize">
+                   <size>
+                    <width>175</width>
+                    <height>0</height>
+                   </size>
+                  </property>
                   <property name="text">
                    <string>Save Category</string>
                   </property>
@@ -891,6 +951,7 @@
   <tabstop>editCategoryName</tabstop>
   <tabstop>btnPickColor</tabstop>
   <tabstop>checkCatProductive</tabstop>
+  <tabstop>btnDeleteCategory</tabstop>
   <tabstop>btnSaveCategory</tabstop>
  </tabstops>
  <resources/>
