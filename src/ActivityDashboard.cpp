@@ -13,11 +13,8 @@
 #include "ActivityDashboard.h"
 #include "ui_ActivityDashboard.h"
 
-// TODO: Добавить в настройках приложений опцию: вернуть скрытые приложения
-// TODO: Добавить QColorDialog в настройках категорий
 // TODO: Добавить в Overview категорий разные метрики
 // TODO: Мб перенести DatabaseManager в отдельный тред для безупречной отзывчивости интерфейса
-// TODO: Добавить удаление категорий + окошко для подтверждения
 
 
 ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget *parent) :
@@ -282,9 +279,14 @@ void ActivityDashboard::refreshOverview(QDate &date_from, QDate &date_to) {
 
     auto *pie_series = new QPieSeries;
     int64_t others_time = 0;
+    int64_t productive_time = 0;
     for (int i = 0; i < (is_app_mode ? data_apps.size() : data_categories.size()); i++) {
         QString name = is_app_mode ? data_apps[i].display_name : data_categories[i].second.name;
         int64_t total_time = is_app_mode ? data_apps[i].total_time : data_categories[i].first;
+        bool is_productive = is_app_mode ? categories[data_apps[i].category_id].is_productive : data_categories[i].second.is_productive;
+        if (is_productive) {
+            productive_time += total_time;
+        }
         QPieSlice *slice = new QPieSlice(name, total_time);
         if (!is_app_mode) slice->setColor(data_categories[i].second.color);
         if (total_time * 20 >= time_sum) {
@@ -323,6 +325,11 @@ void ActivityDashboard::refreshOverview(QDate &date_from, QDate &date_to) {
     chart->setBackgroundVisible(false);
     chart->setAnimationOptions(QChart::SeriesAnimations);
     chart->legend()->setVisible(false);
+
+    double productive_percentage = round((double) productive_time / (double) time_sum * 1000) / 10;
+    QString productive_metric_str = QString("Productive time: %1 (%2%)")
+        .arg(getDisplayTime(productive_time)).arg(productive_percentage);
+    ui->lblProductiveTime->setText(productive_metric_str);
 }
 
 void ActivityDashboard::iconActivated(QSystemTrayIcon::ActivationReason activation_reason) {
