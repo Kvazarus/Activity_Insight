@@ -197,6 +197,45 @@ void setupAppStyle(QApplication& a) {
     QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
         background: none;
     }
+
+/* --- SpinBoxes --- */
+    QSpinBox {
+        background-color: #2b2b2b;
+        color: white;
+        border: 1px solid #444;
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-size: 14px;
+    }
+    QSpinBox::up-button, QSpinBox::down-button {
+        background-color: #383838;
+        border-radius: 2px;
+        width: 20px;
+    }
+    QSpinBox::up-button:hover, QSpinBox::down-button:hover {
+        background-color: #0D6EFD;
+    }
+
+    /* --- Focus Timer Buttons --- */
+    QPushButton#btnFocusStart {
+        background-color: #198754;
+    }
+    QPushButton#btnFocusStart:hover {
+        background-color: #157347;
+    }
+    QPushButton#btnFocusStart:pressed {
+        background-color: #146c43;
+    }
+
+    QPushButton#btnFocusStop {
+        background-color: #dc3545;
+    }
+    QPushButton#btnFocusStop:hover {
+        background-color: #c82333;
+    }
+    QPushButton#btnFocusStop:pressed {
+        background-color: #bd2130;
+    }
     )";
 
     a.setStyleSheet(styleSheet);

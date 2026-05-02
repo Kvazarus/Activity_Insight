@@ -13,10 +13,6 @@
 #include "ActivityDashboard.h"
 #include "ui_ActivityDashboard.h"
 
-// TODO: Добавить в Overview категорий разные метрики
-// TODO: Мб перенести DatabaseManager в отдельный тред для безупречной отзывчивости интерфейса
-
-
 ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget *parent) :
     QMainWindow(parent), ui(new Ui::ActivityDashboard), database_manager(database_manager),
     tray_icon(new QSystemTrayIcon(this)) {
@@ -36,6 +32,11 @@ ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget 
     ui->tableOverviewList->hideColumn(3); // is_hidden
     ui->tableOverviewList->hideColumn(4); // category_id
     ui->tableOverviewList->setContextMenuPolicy(Qt::CustomContextMenu);
+    ui->tableFocusHistory->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    ui->tableFocusHistory->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
+    ui->tableFocusHistory->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+    ui->mainStackedWidget->setCurrentIndex(0);
+    ui->focusTabWidget->setCurrentIndex(0);
 
     QSizePolicy sp = ui->lblSavedStatus->sizePolicy();
     sp.setRetainSizeWhenHidden(true);
@@ -92,12 +93,15 @@ ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget 
         switch (index) {
             case 0:
                 current_mode = Mode::Applications;
+                ui->mainStackedWidget->setCurrentIndex(0);
                 break;
             case 1:
                 current_mode = Mode::Categories;
+                ui->mainStackedWidget->setCurrentIndex(0);
                 break;
             case 2:
                 current_mode = Mode::FocusSessions;
+                ui->mainStackedWidget->setCurrentIndex(1);
                 break;
             default:
                 qDebug() << "Wrong index in comboMode";
@@ -175,29 +179,33 @@ void ActivityDashboard::refreshData() {
     QDate date_from = ui->dateEditFrom->date();
     QDate date_to = ui->dateEditTo->date();
 
-    if (ui->tabWidget->currentIndex() == 0) {
-        refreshOverview(date_from, date_to);
-    } else if (ui->tabWidget->currentIndex() == 1 || ui->tabWidget->currentIndex() == 2) {
-        updateDatesToWeekGap(date_from, date_to);
+    if (current_mode == Mode::FocusSessions) {
 
-        ui->dateEditFrom->blockSignals(true);
-        ui->dateEditTo->blockSignals(true);
-        ui->dateEditFrom->setDate(date_from);
-        ui->dateEditTo->setDate(date_to);
-        ui->dateEditFrom->blockSignals(false);
-        ui->dateEditTo->blockSignals(false);
+    } else {
+        if (ui->tabWidget->currentIndex() == 0) {
+            refreshOverview(date_from, date_to);
+        } else if (ui->tabWidget->currentIndex() == 1 || ui->tabWidget->currentIndex() == 2) {
+            updateDatesToWeekGap(date_from, date_to);
 
-        if (ui->tabWidget->currentIndex() == 1) {
-            refreshDailyActivity(date_from, date_to);
-        } else {
-            refreshDetails(date_from, date_to);
-        }
-    } else if (ui->tabWidget->currentIndex() == 3) {
-        if (current_mode == Mode::Applications) {
-            ui->stackedWidgetSettings->setCurrentIndex(0);
-        } else if (current_mode == Mode::Categories) {
-            ui->stackedWidgetSettings->setCurrentIndex(1);
-            refreshCategorySettings();
+            ui->dateEditFrom->blockSignals(true);
+            ui->dateEditTo->blockSignals(true);
+            ui->dateEditFrom->setDate(date_from);
+            ui->dateEditTo->setDate(date_to);
+            ui->dateEditFrom->blockSignals(false);
+            ui->dateEditTo->blockSignals(false);
+
+            if (ui->tabWidget->currentIndex() == 1) {
+                refreshDailyActivity(date_from, date_to);
+            } else {
+                refreshDetails(date_from, date_to);
+            }
+        } else if (ui->tabWidget->currentIndex() == 3) {
+            if (current_mode == Mode::Applications) {
+                ui->stackedWidgetSettings->setCurrentIndex(0);
+            } else if (current_mode == Mode::Categories) {
+                ui->stackedWidgetSettings->setCurrentIndex(1);
+                refreshCategorySettings();
+            }
         }
     }
 }
@@ -268,6 +276,7 @@ void ActivityDashboard::refreshOverview(QDate &date_from, QDate &date_to) {
             overlay_layout->addWidget(empty_data_label);
         }
         empty_data_label->show();
+        ui->lblProductiveTime->setText("Productive time: 0 min (0%)");
         chart->setTheme(QChart::ChartThemeDark);
         chart->setBackgroundVisible(false);
         chart->setAnimationOptions(QChart::SeriesAnimations);

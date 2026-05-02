@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>760</width>
-    <height>658</height>
+    <width>780</width>
+    <height>680</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -141,811 +141,1220 @@
      </widget>
     </item>
     <item>
-     <widget class="QTabWidget" name="tabWidget">
+     <widget class="QStackedWidget" name="mainStackedWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
-      <property name="documentMode">
-       <bool>false</bool>
-      </property>
-      <widget class="QWidget" name="tabOverview">
-       <attribute name="title">
-        <string>Overview</string>
-       </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_2">
+      <widget class="QWidget" name="pageAnalytics">
+       <layout class="QVBoxLayout" name="verticalLayout_analytics">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
         <item>
-         <widget class="QSplitter" name="overviewSplitter">
-          <property name="orientation">
-           <enum>Qt::Orientation::Horizontal</enum>
+         <widget class="QTabWidget" name="tabWidget">
+          <property name="currentIndex">
+           <number>0</number>
           </property>
-          <property name="handleWidth">
-           <number>6</number>
+          <property name="documentMode">
+           <bool>false</bool>
           </property>
-          <widget class="QWidget" name="pieChartContainer" native="true">
-           <layout class="QVBoxLayout" name="verticalLayoutPie">
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
+          <widget class="QWidget" name="tabOverview">
+           <attribute name="title">
+            <string>Overview</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_2">
             <item>
-             <widget class="QLabel" name="lblTotalTime">
-              <property name="font">
-               <font>
-                <pointsize>12</pointsize>
-                <bold>true</bold>
-               </font>
+             <widget class="QSplitter" name="overviewSplitter">
+              <property name="orientation">
+               <enum>Qt::Orientation::Horizontal</enum>
               </property>
-              <property name="text">
-               <string>Total time: </string>
+              <property name="handleWidth">
+               <number>6</number>
               </property>
-              <property name="alignment">
-               <set>Qt::AlignmentFlag::AlignCenter</set>
-              </property>
-              <property name="margin">
-               <number>8</number>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QChartView" name="chartPieOverview">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
+              <widget class="QWidget" name="pieChartContainer" native="true">
+               <layout class="QVBoxLayout" name="verticalLayoutPie">
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <widget class="QLabel" name="lblTotalTime">
+                  <property name="font">
+                   <font>
+                    <pointsize>12</pointsize>
+                    <bold>true</bold>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Total time: </string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignmentFlag::AlignCenter</set>
+                  </property>
+                  <property name="margin">
+                   <number>8</number>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QChartView" name="chartPieOverview">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+              <widget class="QWidget" name="tableContainer" native="true">
+               <layout class="QVBoxLayout" name="verticalLayoutTable">
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <widget class="QTableWidget" name="tableOverviewList">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="editTriggers">
+                   <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
+                  </property>
+                  <property name="selectionBehavior">
+                   <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+                  </property>
+                  <property name="verticalScrollMode">
+                   <enum>QAbstractItemView::ScrollMode::ScrollPerPixel</enum>
+                  </property>
+                  <attribute name="verticalHeaderVisible">
+                   <bool>false</bool>
+                  </attribute>
+                  <column>
+                   <property name="text">
+                    <string>Application</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>Time</string>
+                   </property>
+                  </column>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="lblProductiveTime">
+                  <property name="font">
+                   <font>
+                    <pointsize>11</pointsize>
+                    <bold>true</bold>
+                   </font>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">color: #6fbd84;</string>
+                  </property>
+                  <property name="text">
+                   <string>Productive time: 0 h (0%)</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignmentFlag::AlignCenter</set>
+                  </property>
+                  <property name="margin">
+                   <number>4</number>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
              </widget>
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tableContainer" native="true">
-           <layout class="QVBoxLayout" name="verticalLayoutTable">
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
+          <widget class="QWidget" name="tabDailyTotals">
+           <attribute name="title">
+            <string>Daily Activity</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_4">
             <item>
-             <widget class="QTableWidget" name="tableOverviewList">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
+             <widget class="QLabel" name="label_2">
+              <property name="font">
+               <font>
+                <pointsize>13</pointsize>
+                <bold>true</bold>
+               </font>
               </property>
+              <property name="text">
+               <string>Daily Activity (click on a bar for details)</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignmentFlag::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayoutDailyChart">
+              <item>
+               <widget class="QToolButton" name="btnDailyPrev">
+                <property name="minimumSize">
+                 <size>
+                  <width>50</width>
+                  <height>100</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>&lt;</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QChartView" name="chartBarDailyTotal">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QToolButton" name="btnDailyNext">
+                <property name="minimumSize">
+                 <size>
+                  <width>50</width>
+                  <height>100</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>&gt;</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="tabDetails">
+           <attribute name="title">
+            <string>Details</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_3">
+            <item>
+             <widget class="QLabel" name="lblDetailsAppName">
+              <property name="font">
+               <font>
+                <pointsize>13</pointsize>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>App Details</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignmentFlag::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayoutChart">
+              <item>
+               <widget class="QToolButton" name="btnPrevWeek">
+                <property name="minimumSize">
+                 <size>
+                  <width>50</width>
+                  <height>100</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>&lt;</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QChartView" name="chartBarAppDetails">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QToolButton" name="btnNextWeek">
+                <property name="minimumSize">
+                 <size>
+                  <width>50</width>
+                  <height>100</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>&gt;</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="tabSettings">
+           <attribute name="title">
+            <string>Settings</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_5">
+            <item>
+             <widget class="QStackedWidget" name="stackedWidgetSettings">
+              <property name="currentIndex">
+               <number>1</number>
+              </property>
+              <widget class="QWidget" name="pageAppSettings">
+               <layout class="QVBoxLayout" name="verticalLayout_pageApp">
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <widget class="QLabel" name="lblSettingsTitle">
+                  <property name="font">
+                   <font>
+                    <pointsize>13</pointsize>
+                    <bold>true</bold>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Application Properties</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignmentFlag::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QFrame" name="frameSettings">
+                  <property name="frameShape">
+                   <enum>QFrame::Shape::StyledPanel</enum>
+                  </property>
+                  <property name="frameShadow">
+                   <enum>QFrame::Shadow::Raised</enum>
+                  </property>
+                  <layout class="QFormLayout" name="formLayout">
+                   <property name="labelAlignment">
+                    <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+                   </property>
+                   <property name="formAlignment">
+                    <set>Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignTop</set>
+                   </property>
+                   <property name="horizontalSpacing">
+                    <number>20</number>
+                   </property>
+                   <property name="verticalSpacing">
+                    <number>15</number>
+                   </property>
+                   <item row="0" column="0">
+                    <widget class="QLabel" name="label_4">
+                     <property name="text">
+                      <string>Full Path:</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="1">
+                    <widget class="QLineEdit" name="editSettingsPath">
+                     <property name="readOnly">
+                      <bool>true</bool>
+                     </property>
+                     <property name="placeholderText">
+                      <string>Right click an app from Overview...</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="0">
+                    <widget class="QLabel" name="label_5">
+                     <property name="text">
+                      <string>Display Name:</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QLineEdit" name="editSettingsName"/>
+                   </item>
+                   <item row="2" column="0">
+                    <widget class="QLabel" name="label_6">
+                     <property name="text">
+                      <string>Category:</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="1">
+                    <widget class="QComboBox" name="comboSettingsCategory">
+                     <item>
+                      <property name="text">
+                       <string>Uncategorized</string>
+                      </property>
+                     </item>
+                    </widget>
+                   </item>
+                   <item row="3" column="0">
+                    <widget class="QLabel" name="label_7">
+                     <property name="text">
+                      <string>Visibility:</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="3" column="1">
+                    <widget class="QCheckBox" name="checkSettingsHidden">
+                     <property name="text">
+                      <string>Hide this application from statistics</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout">
+                  <item>
+                   <spacer name="horizontalSpacer_2">
+                    <property name="orientation">
+                     <enum>Qt::Orientation::Horizontal</enum>
+                    </property>
+                    <property name="sizeHint" stdset="0">
+                     <size>
+                      <width>40</width>
+                      <height>20</height>
+                     </size>
+                    </property>
+                   </spacer>
+                  </item>
+                  <item>
+                   <layout class="QVBoxLayout" name="verticalLayoutSaveBtn">
+                    <item>
+                     <widget class="QPushButton" name="btnSaveSettings">
+                      <property name="text">
+                       <string>Save Changes</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QLabel" name="lblSavedStatus">
+                      <property name="font">
+                       <font>
+                        <bold>true</bold>
+                       </font>
+                      </property>
+                      <property name="styleSheet">
+                       <string notr="true">color: #4CAF50;</string>
+                      </property>
+                      <property name="text">
+                       <string>Saved!</string>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignmentFlag::AlignCenter</set>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <spacer name="verticalSpacer">
+                  <property name="orientation">
+                   <enum>Qt::Orientation::Vertical</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>20</width>
+                    <height>40</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="groupBoxHiddenApps">
+                  <property name="font">
+                   <font>
+                    <bold>true</bold>
+                   </font>
+                  </property>
+                  <property name="title">
+                   <string>Hidden Applications Management</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignmentFlag::AlignCenter</set>
+                  </property>
+                  <layout class="QHBoxLayout" name="horizontalLayout_2">
+                   <item>
+                    <widget class="QListWidget" name="listHiddenApps">
+                     <property name="maximumSize">
+                      <size>
+                       <width>16777215</width>
+                       <height>180</height>
+                      </size>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QPushButton" name="btnRestoreHidden">
+                     <property name="minimumSize">
+                      <size>
+                       <width>120</width>
+                       <height>40</height>
+                      </size>
+                     </property>
+                     <property name="text">
+                      <string>Restore Selected</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+              <widget class="QWidget" name="pageCategorySettings">
+               <layout class="QVBoxLayout" name="verticalLayout_pageCat">
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <widget class="QLabel" name="lblCategorySettingsTitle">
+                  <property name="font">
+                   <font>
+                    <pointsize>13</pointsize>
+                    <bold>true</bold>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Category Properties</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignmentFlag::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QFrame" name="frameCategorySettings">
+                  <property name="frameShape">
+                   <enum>QFrame::Shape::StyledPanel</enum>
+                  </property>
+                  <property name="frameShadow">
+                   <enum>QFrame::Shadow::Raised</enum>
+                  </property>
+                  <layout class="QFormLayout" name="formLayoutCategory">
+                   <property name="labelAlignment">
+                    <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+                   </property>
+                   <property name="formAlignment">
+                    <set>Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignTop</set>
+                   </property>
+                   <property name="horizontalSpacing">
+                    <number>20</number>
+                   </property>
+                   <property name="verticalSpacing">
+                    <number>15</number>
+                   </property>
+                   <item row="0" column="0">
+                    <widget class="QLabel" name="labelSelectCat">
+                     <property name="text">
+                      <string>Select Category:</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="1">
+                    <layout class="QHBoxLayout" name="horizontalLayoutCatSelect">
+                     <item>
+                      <widget class="QComboBox" name="comboEditCategory">
+                       <property name="minimumSize">
+                        <size>
+                         <width>250</width>
+                         <height>0</height>
+                        </size>
+                       </property>
+                       <property name="placeholderText">
+                        <string>Right click a category from Overview or choose it here</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <spacer name="horizontalSpacer_3">
+                       <property name="orientation">
+                        <enum>Qt::Orientation::Horizontal</enum>
+                       </property>
+                       <property name="sizeType">
+                        <enum>QSizePolicy::Policy::Maximum</enum>
+                       </property>
+                       <property name="sizeHint" stdset="0">
+                        <size>
+                         <width>40</width>
+                         <height>20</height>
+                        </size>
+                       </property>
+                      </spacer>
+                     </item>
+                     <item>
+                      <widget class="QPushButton" name="btnCreateNewCategory">
+                       <property name="minimumSize">
+                        <size>
+                         <width>150</width>
+                         <height>0</height>
+                        </size>
+                       </property>
+                       <property name="maximumSize">
+                        <size>
+                         <width>150</width>
+                         <height>16777215</height>
+                        </size>
+                       </property>
+                       <property name="text">
+                        <string>+ New Category</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </item>
+                   <item row="1" column="0">
+                    <widget class="QLabel" name="labelCatName">
+                     <property name="text">
+                      <string>Category Name:</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QLineEdit" name="editCategoryName"/>
+                   </item>
+                   <item row="2" column="0">
+                    <widget class="QLabel" name="labelCatColor">
+                     <property name="text">
+                      <string>Color:</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="1">
+                    <layout class="QHBoxLayout" name="horizontalLayoutColor">
+                     <item>
+                      <widget class="QLabel" name="lblColorPreview">
+                       <property name="minimumSize">
+                        <size>
+                         <width>30</width>
+                         <height>20</height>
+                        </size>
+                       </property>
+                       <property name="styleSheet">
+                        <string notr="true">background-color: #808080; border: 1px solid #fff; border-radius: 4px;</string>
+                       </property>
+                       <property name="text">
+                        <string/>
+                       </property>
+                       <property name="margin">
+                        <number>0</number>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <spacer name="horizontalSpacer_4">
+                       <property name="orientation">
+                        <enum>Qt::Orientation::Horizontal</enum>
+                       </property>
+                       <property name="sizeType">
+                        <enum>QSizePolicy::Policy::Maximum</enum>
+                       </property>
+                       <property name="sizeHint" stdset="0">
+                        <size>
+                         <width>10</width>
+                         <height>20</height>
+                        </size>
+                       </property>
+                      </spacer>
+                     </item>
+                     <item>
+                      <widget class="QPushButton" name="btnPickColor">
+                       <property name="text">
+                        <string>Pick Color...</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <spacer name="hSpacerColor">
+                       <property name="orientation">
+                        <enum>Qt::Orientation::Horizontal</enum>
+                       </property>
+                       <property name="sizeHint" stdset="0">
+                        <size>
+                         <width>40</width>
+                         <height>20</height>
+                        </size>
+                       </property>
+                      </spacer>
+                     </item>
+                    </layout>
+                   </item>
+                   <item row="3" column="0">
+                    <widget class="QLabel" name="labelCatProductive">
+                     <property name="text">
+                      <string>Productivity:</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="3" column="1">
+                    <widget class="QCheckBox" name="checkCatProductive">
+                     <property name="text">
+                      <string>Mark as productive time</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayoutCatSave">
+                  <item>
+                   <spacer name="hSpacerCatSave">
+                    <property name="orientation">
+                     <enum>Qt::Orientation::Horizontal</enum>
+                    </property>
+                    <property name="sizeHint" stdset="0">
+                     <size>
+                      <width>40</width>
+                      <height>20</height>
+                     </size>
+                    </property>
+                   </spacer>
+                  </item>
+                  <item>
+                   <layout class="QVBoxLayout" name="verticalLayoutCatDeleteBtn">
+                    <item>
+                     <widget class="QPushButton" name="btnDeleteCategory">
+                      <property name="minimumSize">
+                       <size>
+                        <width>175</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string>Delete Category</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QLabel" name="lblCategoryDeletedStatus">
+                      <property name="font">
+                       <font>
+                        <bold>true</bold>
+                       </font>
+                      </property>
+                      <property name="styleSheet">
+                       <string notr="true">color: #FF9800;</string>
+                      </property>
+                      <property name="text">
+                       <string>Deleted!</string>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignmentFlag::AlignCenter</set>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                  <item>
+                   <spacer name="horizontalSpacer_5">
+                    <property name="orientation">
+                     <enum>Qt::Orientation::Horizontal</enum>
+                    </property>
+                    <property name="sizeType">
+                     <enum>QSizePolicy::Policy::Maximum</enum>
+                    </property>
+                    <property name="sizeHint" stdset="0">
+                     <size>
+                      <width>15</width>
+                      <height>20</height>
+                     </size>
+                    </property>
+                   </spacer>
+                  </item>
+                  <item>
+                   <layout class="QVBoxLayout" name="verticalLayoutCatSaveBtn">
+                    <item>
+                     <widget class="QPushButton" name="btnSaveCategory">
+                      <property name="minimumSize">
+                       <size>
+                        <width>175</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string>Save Category</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QLabel" name="lblCategorySavedStatus">
+                      <property name="font">
+                       <font>
+                        <bold>true</bold>
+                       </font>
+                      </property>
+                      <property name="styleSheet">
+                       <string notr="true">color: #4CAF50;</string>
+                      </property>
+                      <property name="text">
+                       <string>Saved!</string>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignmentFlag::AlignCenter</set>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <spacer name="verticalSpacerCat">
+                  <property name="orientation">
+                   <enum>Qt::Orientation::Vertical</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>20</width>
+                    <height>40</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </widget>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="pageFocus">
+       <layout class="QVBoxLayout" name="verticalLayout_focus">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QTabWidget" name="focusTabWidget">
+          <property name="currentIndex">
+           <number>1</number>
+          </property>
+          <widget class="QWidget" name="tabFocusTimer">
+           <attribute name="title">
+            <string>Timer</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_timer">
+            <item>
+             <widget class="QGroupBox" name="groupFocusSettings">
+              <property name="title">
+               <string>Session Settings</string>
+              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_focusSetup">
+               <item>
+                <widget class="QLabel" name="labelFocusCat">
+                 <property name="text">
+                  <string>Focus on:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QComboBox" name="comboFocusCategory">
+                 <property name="minimumSize">
+                  <size>
+                   <width>150</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="hSpacerFocus1">
+                 <property name="orientation">
+                  <enum>Qt::Orientation::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>20</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item>
+                <widget class="QLabel" name="labelWorkTime">
+                 <property name="text">
+                  <string>Work (min):</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QSpinBox" name="spinWorkTime">
+                 <property name="minimum">
+                  <number>1</number>
+                 </property>
+                 <property name="maximum">
+                  <number>120</number>
+                 </property>
+                 <property name="value">
+                  <number>25</number>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="hSpacerFocus2">
+                 <property name="orientation">
+                  <enum>Qt::Orientation::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>20</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item>
+                <widget class="QLabel" name="labelBreakTime">
+                 <property name="text">
+                  <string>Break (min):</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QSpinBox" name="spinBreakTime">
+                 <property name="minimum">
+                  <number>1</number>
+                 </property>
+                 <property name="maximum">
+                  <number>60</number>
+                 </property>
+                 <property name="value">
+                  <number>5</number>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="hSpacerFocus3">
+                 <property name="orientation">
+                  <enum>Qt::Orientation::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <spacer name="vSpacerTimerTop">
+              <property name="orientation">
+               <enum>Qt::Orientation::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QLabel" name="lblTimerStatus">
+              <property name="font">
+               <font>
+                <pointsize>16</pointsize>
+               </font>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">color: #aaaaaa;</string>
+              </property>
+              <property name="text">
+               <string>Ready to focus</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignmentFlag::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lblTimerDisplay">
+              <property name="font">
+               <font>
+                <pointsize>85</pointsize>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>25:00</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignmentFlag::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="vSpacerTimerBottom">
+              <property name="orientation">
+               <enum>Qt::Orientation::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_timerBtns">
+              <item>
+               <spacer name="hSpacerBtnLeft">
+                <property name="orientation">
+                 <enum>Qt::Orientation::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btnFocusStart">
+                <property name="minimumSize">
+                 <size>
+                  <width>150</width>
+                  <height>45</height>
+                 </size>
+                </property>
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Start</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btnFocusStop">
+                <property name="minimumSize">
+                 <size>
+                  <width>150</width>
+                  <height>45</height>
+                 </size>
+                </property>
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Stop</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="hSpacerBtnRight">
+                <property name="orientation">
+                 <enum>Qt::Orientation::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <spacer name="vSpacerTimerEnd">
+              <property name="orientation">
+               <enum>Qt::Orientation::Vertical</enum>
+              </property>
+              <property name="sizeType">
+               <enum>QSizePolicy::Policy::Fixed</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="tabFocusStats">
+           <attribute name="title">
+            <string>Session History</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_focusStats">
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_focusSummary">
+              <item>
+               <widget class="QGroupBox" name="groupTotalFocus">
+                <property name="title">
+                 <string>Total Focus Time</string>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_9">
+                 <item>
+                  <widget class="QLabel" name="lblTotalFocusStat">
+                   <property name="font">
+                    <font>
+                     <pointsize>14</pointsize>
+                     <bold>true</bold>
+                    </font>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true">color: #0D6EFD;</string>
+                   </property>
+                   <property name="text">
+                    <string>0 h 0 min</string>
+                   </property>
+                   <property name="alignment">
+                    <set>Qt::AlignmentFlag::AlignCenter</set>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QGroupBox" name="groupTotalSessions">
+                <property name="title">
+                 <string>Completed Sessions</string>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_10">
+                 <item>
+                  <widget class="QLabel" name="lblTotalSessionsStat">
+                   <property name="font">
+                    <font>
+                     <pointsize>14</pointsize>
+                     <bold>true</bold>
+                    </font>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true">color: #0D6EFD;</string>
+                   </property>
+                   <property name="text">
+                    <string>0</string>
+                   </property>
+                   <property name="alignment">
+                    <set>Qt::AlignmentFlag::AlignCenter</set>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <widget class="QLabel" name="lblFocusHistoryTitle">
+              <property name="font">
+               <font>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>Sessions (Based on selected dates)</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QTableWidget" name="tableFocusHistory">
               <property name="editTriggers">
                <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
               </property>
               <property name="selectionBehavior">
                <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
               </property>
-              <property name="verticalScrollMode">
-               <enum>QAbstractItemView::ScrollMode::ScrollPerPixel</enum>
-              </property>
               <attribute name="verticalHeaderVisible">
                <bool>false</bool>
               </attribute>
               <column>
                <property name="text">
-                <string>Application</string>
+                <string>Date</string>
                </property>
               </column>
               <column>
                <property name="text">
-                <string>Time</string>
+                <string>Category</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>Duration</string>
                </property>
               </column>
              </widget>
-            </item>
-            <item>
-             <widget class="QLabel" name="lblProductiveTime">
-              <property name="font">
-               <font>
-                <pointsize>11</pointsize>
-                <bold>true</bold>
-               </font>
-              </property>
-              <property name="styleSheet">
-               <string notr="true">color: #6fbd84;</string>
-              </property>
-              <property name="text">
-               <string>Productive time: 0 h (0%)</string>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignmentFlag::AlignCenter</set>
-              </property>
-              <property name="margin">
-               <number>4</number>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="tabDailyTotals">
-       <attribute name="title">
-        <string>Daily Activity</string>
-       </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_4">
-        <item>
-         <widget class="QLabel" name="label_2">
-          <property name="font">
-           <font>
-            <pointsize>13</pointsize>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>Daily Activity (click on a bar for details)</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayoutDailyChart">
-          <item>
-           <widget class="QToolButton" name="btnDailyPrev">
-            <property name="minimumSize">
-             <size>
-              <width>50</width>
-              <height>100</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>&lt;</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QChartView" name="chartBarDailyTotal">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QToolButton" name="btnDailyNext">
-            <property name="minimumSize">
-             <size>
-              <width>50</width>
-              <height>100</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>&gt;</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="tabDetails">
-       <attribute name="title">
-        <string>Details</string>
-       </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_3">
-        <item>
-         <widget class="QLabel" name="lblDetailsAppName">
-          <property name="font">
-           <font>
-            <pointsize>13</pointsize>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>App Details</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayoutChart">
-          <item>
-           <widget class="QToolButton" name="btnPrevWeek">
-            <property name="minimumSize">
-             <size>
-              <width>50</width>
-              <height>100</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>&lt;</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QChartView" name="chartBarAppDetails">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QToolButton" name="btnNextWeek">
-            <property name="minimumSize">
-             <size>
-              <width>50</width>
-              <height>100</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>&gt;</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="tabSettings">
-       <attribute name="title">
-        <string>Settings</string>
-       </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_5">
-        <item>
-         <widget class="QStackedWidget" name="stackedWidgetSettings">
-          <property name="currentIndex">
-           <number>1</number>
-          </property>
-          <widget class="QWidget" name="pageAppSettings">
-           <layout class="QVBoxLayout" name="verticalLayout_pageApp">
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
-            <item>
-             <widget class="QLabel" name="lblSettingsTitle">
-              <property name="font">
-               <font>
-                <pointsize>13</pointsize>
-                <bold>true</bold>
-               </font>
-              </property>
-              <property name="text">
-               <string>Application Properties</string>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignmentFlag::AlignCenter</set>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QFrame" name="frameSettings">
-              <property name="frameShape">
-               <enum>QFrame::Shape::StyledPanel</enum>
-              </property>
-              <property name="frameShadow">
-               <enum>QFrame::Shadow::Raised</enum>
-              </property>
-              <layout class="QFormLayout" name="formLayout">
-               <property name="labelAlignment">
-                <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
-               </property>
-               <property name="formAlignment">
-                <set>Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignTop</set>
-               </property>
-               <property name="horizontalSpacing">
-                <number>20</number>
-               </property>
-               <property name="verticalSpacing">
-                <number>15</number>
-               </property>
-               <item row="0" column="0">
-                <widget class="QLabel" name="label_4">
-                 <property name="text">
-                  <string>Full Path:</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="0" column="1">
-                <widget class="QLineEdit" name="editSettingsPath">
-                 <property name="readOnly">
-                  <bool>true</bool>
-                 </property>
-                 <property name="placeholderText">
-                  <string>Right click an app from Overview...</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="0">
-                <widget class="QLabel" name="label_5">
-                 <property name="text">
-                  <string>Display Name:</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="1">
-                <widget class="QLineEdit" name="editSettingsName"/>
-               </item>
-               <item row="2" column="0">
-                <widget class="QLabel" name="label_6">
-                 <property name="text">
-                  <string>Category:</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="2" column="1">
-                <widget class="QComboBox" name="comboSettingsCategory">
-                 <item>
-                  <property name="text">
-                   <string>Uncategorized</string>
-                  </property>
-                 </item>
-                </widget>
-               </item>
-               <item row="3" column="0">
-                <widget class="QLabel" name="label_7">
-                 <property name="text">
-                  <string>Visibility:</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="3" column="1">
-                <widget class="QCheckBox" name="checkSettingsHidden">
-                 <property name="text">
-                  <string>Hide this application from statistics</string>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </widget>
-            </item>
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout">
-              <item>
-               <spacer name="horizontalSpacer_2">
-                <property name="orientation">
-                 <enum>Qt::Orientation::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item>
-               <layout class="QVBoxLayout" name="verticalLayoutSaveBtn">
-                <item>
-                 <widget class="QPushButton" name="btnSaveSettings">
-                  <property name="text">
-                   <string>Save Changes</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="lblSavedStatus">
-                  <property name="font">
-                   <font>
-                    <bold>true</bold>
-                   </font>
-                  </property>
-                  <property name="styleSheet">
-                   <string notr="true">color: #4CAF50;</string>
-                  </property>
-                  <property name="text">
-                   <string>Saved!</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignmentFlag::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <spacer name="verticalSpacer">
-              <property name="orientation">
-               <enum>Qt::Orientation::Vertical</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>20</width>
-                <height>40</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item>
-             <widget class="QGroupBox" name="groupBoxHiddenApps">
-              <property name="font">
-               <font>
-                <bold>true</bold>
-               </font>
-              </property>
-              <property name="title">
-               <string>Hidden Applications Management</string>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignmentFlag::AlignCenter</set>
-              </property>
-              <layout class="QHBoxLayout" name="horizontalLayout_2">
-               <item>
-                <widget class="QListWidget" name="listHiddenApps">
-                 <property name="maximumSize">
-                  <size>
-                   <width>16777215</width>
-                   <height>180</height>
-                  </size>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QPushButton" name="btnRestoreHidden">
-                 <property name="minimumSize">
-                  <size>
-                   <width>120</width>
-                   <height>40</height>
-                  </size>
-                 </property>
-                 <property name="text">
-                  <string>Restore Selected</string>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-          <widget class="QWidget" name="pageCategorySettings">
-           <layout class="QVBoxLayout" name="verticalLayout_pageCat">
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
-            <item>
-             <widget class="QLabel" name="lblCategorySettingsTitle">
-              <property name="font">
-               <font>
-                <pointsize>13</pointsize>
-                <bold>true</bold>
-               </font>
-              </property>
-              <property name="text">
-               <string>Category Properties</string>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignmentFlag::AlignCenter</set>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QFrame" name="frameCategorySettings">
-              <property name="frameShape">
-               <enum>QFrame::Shape::StyledPanel</enum>
-              </property>
-              <property name="frameShadow">
-               <enum>QFrame::Shadow::Raised</enum>
-              </property>
-              <layout class="QFormLayout" name="formLayoutCategory">
-               <property name="labelAlignment">
-                <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
-               </property>
-               <property name="formAlignment">
-                <set>Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignTop</set>
-               </property>
-               <property name="horizontalSpacing">
-                <number>20</number>
-               </property>
-               <property name="verticalSpacing">
-                <number>15</number>
-               </property>
-               <item row="0" column="0">
-                <widget class="QLabel" name="labelSelectCat">
-                 <property name="text">
-                  <string>Select Category:</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="0" column="1">
-                <layout class="QHBoxLayout" name="horizontalLayoutCatSelect">
-                 <item>
-                  <widget class="QComboBox" name="comboEditCategory">
-                   <property name="minimumSize">
-                    <size>
-                     <width>250</width>
-                     <height>0</height>
-                    </size>
-                   </property>
-                   <property name="placeholderText">
-                    <string>Right click a category from Overview or choose it here</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <spacer name="horizontalSpacer_3">
-                   <property name="orientation">
-                    <enum>Qt::Orientation::Horizontal</enum>
-                   </property>
-                   <property name="sizeType">
-                    <enum>QSizePolicy::Policy::Maximum</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>40</width>
-                     <height>20</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
-                 <item>
-                  <widget class="QPushButton" name="btnCreateNewCategory">
-                   <property name="minimumSize">
-                    <size>
-                     <width>150</width>
-                     <height>0</height>
-                    </size>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>150</width>
-                     <height>16777215</height>
-                    </size>
-                   </property>
-                   <property name="text">
-                    <string>+ New Category</string>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
-               </item>
-               <item row="1" column="0">
-                <widget class="QLabel" name="labelCatName">
-                 <property name="text">
-                  <string>Category Name:</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="1">
-                <widget class="QLineEdit" name="editCategoryName"/>
-               </item>
-               <item row="2" column="0">
-                <widget class="QLabel" name="labelCatColor">
-                 <property name="text">
-                  <string>Color:</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="2" column="1">
-                <layout class="QHBoxLayout" name="horizontalLayoutColor">
-                 <item>
-                  <widget class="QLabel" name="lblColorPreview">
-                   <property name="minimumSize">
-                    <size>
-                     <width>30</width>
-                     <height>20</height>
-                    </size>
-                   </property>
-                   <property name="styleSheet">
-                    <string notr="true">background-color: #808080; border: 1px solid #fff; border-radius: 4px;</string>
-                   </property>
-                   <property name="text">
-                    <string/>
-                   </property>
-                   <property name="margin">
-                    <number>0</number>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <spacer name="horizontalSpacer_4">
-                   <property name="orientation">
-                    <enum>Qt::Orientation::Horizontal</enum>
-                   </property>
-                   <property name="sizeType">
-                    <enum>QSizePolicy::Policy::Maximum</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>10</width>
-                     <height>20</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
-                 <item>
-                  <widget class="QPushButton" name="btnPickColor">
-                   <property name="text">
-                    <string>Pick Color...</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <spacer name="hSpacerColor">
-                   <property name="orientation">
-                    <enum>Qt::Orientation::Horizontal</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>40</width>
-                     <height>20</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
-                </layout>
-               </item>
-               <item row="3" column="0">
-                <widget class="QLabel" name="labelCatProductive">
-                 <property name="text">
-                  <string>Productivity:</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="3" column="1">
-                <widget class="QCheckBox" name="checkCatProductive">
-                 <property name="text">
-                  <string>Mark as productive time</string>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </widget>
-            </item>
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayoutCatSave">
-              <item>
-               <spacer name="hSpacerCatSave">
-                <property name="orientation">
-                 <enum>Qt::Orientation::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>40</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item>
-               <layout class="QVBoxLayout" name="verticalLayoutCatDeleteBtn">
-                <item>
-                 <widget class="QPushButton" name="btnDeleteCategory">
-                  <property name="minimumSize">
-                   <size>
-                    <width>175</width>
-                    <height>0</height>
-                   </size>
-                  </property>
-                  <property name="text">
-                   <string>Delete Category</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="lblCategoryDeletedStatus">
-                  <property name="font">
-                   <font>
-                    <bold>true</bold>
-                   </font>
-                  </property>
-                  <property name="styleSheet">
-                   <string notr="true">color: #FF9800;</string>
-                  </property>
-                  <property name="text">
-                   <string>Deleted!</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignmentFlag::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-              <item>
-               <spacer name="horizontalSpacer_5">
-                <property name="orientation">
-                 <enum>Qt::Orientation::Horizontal</enum>
-                </property>
-                <property name="sizeType">
-                 <enum>QSizePolicy::Policy::Maximum</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>15</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item>
-               <layout class="QVBoxLayout" name="verticalLayoutCatSaveBtn">
-                <item>
-                 <widget class="QPushButton" name="btnSaveCategory">
-                  <property name="minimumSize">
-                   <size>
-                    <width>175</width>
-                    <height>0</height>
-                   </size>
-                  </property>
-                  <property name="text">
-                   <string>Save Category</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="lblCategorySavedStatus">
-                  <property name="font">
-                   <font>
-                    <bold>true</bold>
-                   </font>
-                  </property>
-                  <property name="styleSheet">
-                   <string notr="true">color: #4CAF50;</string>
-                  </property>
-                  <property name="text">
-                   <string>Saved!</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignmentFlag::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <spacer name="verticalSpacerCat">
-              <property name="orientation">
-               <enum>Qt::Orientation::Vertical</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>20</width>
-                <height>40</height>
-               </size>
-              </property>
-             </spacer>
             </item>
            </layout>
           </widget>
@@ -993,6 +1402,12 @@
   <tabstop>checkCatProductive</tabstop>
   <tabstop>btnDeleteCategory</tabstop>
   <tabstop>btnSaveCategory</tabstop>
+  <tabstop>comboFocusCategory</tabstop>
+  <tabstop>spinWorkTime</tabstop>
+  <tabstop>spinBreakTime</tabstop>
+  <tabstop>btnFocusStart</tabstop>
+  <tabstop>btnFocusStop</tabstop>
+  <tabstop>tableFocusHistory</tabstop>
  </tabstops>
  <resources/>
  <connections>
