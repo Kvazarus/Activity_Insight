@@ -2,10 +2,12 @@
 #define ACTIVITY_INSIGHT_DATABASE_MANAGER
 
 #include <QSqlDatabase>
+#include <QDateTime>
 
 #include "WindowData.h"
 #include "AppStats.h"
 #include "Category.h"
+#include "FocusSession.h"
 
 class DatabaseManager : public QObject {
     Q_OBJECT
@@ -28,6 +30,9 @@ class DatabaseManager : public QObject {
     void updateCategoryInfo(const Category& category);
     int insertNewCategory(const Category& category);
     void deleteCategory(int category_id);
+    void insertFocusSession(int category_id, const QDateTime &session_datetime, int duration_secs);
+    std::vector<std::pair<int, int64_t>> getFocusSessionsCategoriesStats(const QDate &date_from, const QDate &date_to);
+    std::vector<FocusSession> getFocusSessions(const QDate &date_from, const QDate &date_to);
 };
 
 #endif // ACTIVITY_INSIGHT_DATABASE_MANAGER

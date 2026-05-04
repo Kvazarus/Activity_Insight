@@ -198,7 +198,7 @@ void setupAppStyle(QApplication& a) {
         background: none;
     }
 
-/* --- SpinBoxes --- */
+    /* --- SpinBoxes --- */
     QSpinBox {
         background-color: #2b2b2b;
         color: white;
@@ -206,14 +206,6 @@ void setupAppStyle(QApplication& a) {
         border-radius: 4px;
         padding: 4px 8px;
         font-size: 14px;
-    }
-    QSpinBox::up-button, QSpinBox::down-button {
-        background-color: #383838;
-        border-radius: 2px;
-        width: 20px;
-    }
-    QSpinBox::up-button:hover, QSpinBox::down-button:hover {
-        background-color: #0D6EFD;
     }
 
     /* --- Focus Timer Buttons --- */

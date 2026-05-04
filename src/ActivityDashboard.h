@@ -8,10 +8,13 @@
 #include <QChart>
 #include <QRandomGenerator>
 #include <QLabel>
+#include <QTimer>
 
 #include "DatabaseManager.h"
 #include "Category.h"
 #include "Mode.h"
+#include "TimerState.h"
+#include "FocusSession.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class ActivityDashboard; }
@@ -37,6 +40,12 @@ class ActivityDashboard : public QMainWindow {
     int active_category_id = -1;
     Mode current_mode = Mode::Applications;
     const QString default_color = "#9E9E9E";
+    QTimer *focus_timer;
+    int timer_remaining_seconds = 25 * 60;
+    int total_session_seconds;
+    bool is_break_mode = false;
+    bool is_timer_working;
+    TimerState timer_state = TimerState::Disabled;
 
     QString getDisplayTime(int64_t time);
     void createMenu();
@@ -52,9 +61,13 @@ class ActivityDashboard : public QMainWindow {
     void updateCategories();
     void refreshCategorySettings();
     QString generateRandomColor();
+    void inflictFadingEffectOnLabel(QLabel *label);
     void saveCategorySettings();
     void deleteCategory();
-    void inflictFadingEffectOnLabel(QLabel *label);
+    void insertFocusSession();
+    void updateTimerDisplay();
+    void updateFocusTimerStyle();
+    void refreshFocusSessionHistory(QDate &date_from, QDate &date_to);
 
  protected:
     void closeEvent(QCloseEvent *event) override;
@@ -64,6 +77,9 @@ class ActivityDashboard : public QMainWindow {
     void iconActivated(QSystemTrayIcon::ActivationReason activation_reason);
     void tableItemLeftClicked(int row);
     void tableItemRightClicked(int row);
+    void onFocusTimerTick();
+    void btnFocusStartClicked();
+    void btnFocusStopClicked();
 };
 
 #endif //ACTIVITY_INSIGHT_SRC_ACTIVITYDASHBOARD_H_

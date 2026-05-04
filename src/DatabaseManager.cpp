@@ -63,10 +63,10 @@ void DatabaseManager::init() {
         R"(
             CREATE TABLE IF NOT EXISTS focus_sessions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                start_time INTEGER NOT NULL,
-                end_time INTEGER,
-                planned_duration INTEGER,
-                status TEXT CHECK( status IN ('COMPLETED', 'INTERRUPTED', 'FAILED', 'RUNNING') ) DEFAULT 'RUNNING'
+                category_id INTEGER DEFAULT 1,
+                session_datetime INTEGER NOT NULL,
+                duration INTEGER NOT NULL,
+                FOREIGN KEY(category_id) REFERENCES categories(id) ON DELETE SET DEFAULT
             );
         )"
     };
@@ -465,7 +465,7 @@ int DatabaseManager::insertNewCategory(const Category &category) {
     q.addBindValue(category.is_productive);
 
     if (!q.exec()) {
-        qDebug() << "Error during insertion a new category";
+        qDebug() << "Error during insertion a new category" << q.lastError().text();
         return -1;
     }
 
@@ -492,4 +492,71 @@ void DatabaseManager::deleteCategory(int category_id) {
     if (!q.exec()) {
         qDebug() << "Failed to delete Category: " << q.lastError().text();
     }
+}
+
+void DatabaseManager::insertFocusSession(int category_id, const QDateTime &session_datetime, int duration_secs) {
+    QSqlQuery q(db);
+
+    q.prepare("INSERT INTO focus_sessions (category_id, session_datetime, duration) "
+              "VALUES (?, ?, ?)");
+    q.addBindValue(category_id);
+    q.addBindValue(session_datetime.toSecsSinceEpoch());
+    q.addBindValue(duration_secs);
+
+    if (!q.exec()) {
+        qDebug() << "Error during insertion a focus session" << q.lastError().text();
+    }
+}
+
+std::vector<std::pair<int, int64_t>> DatabaseManager::getFocusSessionsCategoriesStats(const QDate &date_from, const QDate &date_to) {
+    QSqlQuery q(db);
+
+    int64_t time_from = QDateTime(date_from, QTime(0, 0, 0)).toSecsSinceEpoch();
+    int64_t time_to = QDateTime(date_to, QTime(23, 59, 59)).toSecsSinceEpoch();
+
+    q.prepare(R"(
+        SELECT category_id, SUM(duration) as total_time_sum
+        FROM focus_sessions
+        WHERE session_datetime BETWEEN ? AND ?
+        GROUP BY category_id
+        ORDER BY total_time_sum DESC
+    )");
+    q.addBindValue(time_from);
+    q.addBindValue(time_to);
+    if (!q.exec()) {
+        qDebug() << "Failed to get Focus Sessions Categories stats data: " << q.lastError().text();
+        return {};
+    }
+
+    std::vector<std::pair<int, int64_t>> res;
+    while (q.next()) {
+        res.emplace_back(q.value(0).toInt(), q.value(1).toLongLong());
+    }
+    return res;
+}
+
+std::vector<FocusSession> DatabaseManager::getFocusSessions(const QDate &date_from, const QDate &date_to) {
+    QSqlQuery q(db);
+
+    int64_t time_from = QDateTime(date_from, QTime(0, 0, 0)).toSecsSinceEpoch();
+    int64_t time_to = QDateTime(date_to, QTime(23, 59, 59)).toSecsSinceEpoch();
+
+    q.prepare(R"(
+        SELECT category_id, session_datetime, duration
+        FROM focus_sessions
+        WHERE session_datetime BETWEEN ? AND ?
+        ORDER BY session_datetime DESC
+    )");
+    q.addBindValue(time_from);
+    q.addBindValue(time_to);
+    if (!q.exec()) {
+        qDebug() << "Failed to get Focus Sessions: " << q.lastError().text();
+        return {};
+    }
+
+    std::vector<FocusSession> res;
+    while (q.next()) {
+        res.push_back({q.value(0).toInt(), q.value(1).toLongLong(), q.value(2).toInt()});
+    }
+    return res;
 }

@@ -1119,37 +1119,48 @@
              </spacer>
             </item>
             <item>
-             <widget class="QLabel" name="lblTimerStatus">
-              <property name="font">
-               <font>
-                <pointsize>16</pointsize>
-               </font>
-              </property>
+             <widget class="QFrame" name="frameTimerDisplay">
               <property name="styleSheet">
-               <string notr="true">color: #aaaaaa;</string>
+               <string notr="true">
+                QFrame#frameTimerDisplay {
+                background-color: transparent;
+                border-radius: 16px;
+                }
+               </string>
               </property>
-              <property name="text">
-               <string>Ready to focus</string>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignmentFlag::AlignCenter</set>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLabel" name="lblTimerDisplay">
-              <property name="font">
-               <font>
-                <pointsize>85</pointsize>
-                <bold>true</bold>
-               </font>
-              </property>
-              <property name="text">
-               <string>25:00</string>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignmentFlag::AlignCenter</set>
-              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_timerText">
+               <item>
+                <widget class="QLabel" name="lblTimerStatus">
+                 <property name="font">
+                  <font>
+                   <pointsize>20</pointsize>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>Ready to focus</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignmentFlag::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="lblTimerDisplay">
+                 <property name="font">
+                  <font>
+                   <pointsize>85</pointsize>
+                   <bold>true</bold>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>25:00</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignmentFlag::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+              </layout>
              </widget>
             </item>
             <item>
@@ -1260,6 +1271,24 @@
              <layout class="QHBoxLayout" name="horizontalLayout_focusSummary">
               <item>
                <widget class="QGroupBox" name="groupTotalFocus">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>85</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>85</height>
+                 </size>
+                </property>
                 <property name="title">
                  <string>Total Focus Time</string>
                 </property>
@@ -1288,6 +1317,24 @@
               </item>
               <item>
                <widget class="QGroupBox" name="groupTotalSessions">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>85</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>85</height>
+                 </size>
+                </property>
                 <property name="title">
                  <string>Completed Sessions</string>
                 </property>
@@ -1317,43 +1364,119 @@
              </layout>
             </item>
             <item>
-             <widget class="QLabel" name="lblFocusHistoryTitle">
-              <property name="font">
-               <font>
-                <bold>true</bold>
-               </font>
+             <widget class="QSplitter" name="focusStatsSplitter">
+              <property name="orientation">
+               <enum>Qt::Orientation::Horizontal</enum>
               </property>
-              <property name="text">
-               <string>Sessions (Based on selected dates)</string>
+              <property name="handleWidth">
+               <number>6</number>
               </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QTableWidget" name="tableFocusHistory">
-              <property name="editTriggers">
-               <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
-              </property>
-              <property name="selectionBehavior">
-               <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
-              </property>
-              <attribute name="verticalHeaderVisible">
-               <bool>false</bool>
-              </attribute>
-              <column>
-               <property name="text">
-                <string>Date</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>Category</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>Duration</string>
-               </property>
-              </column>
+              <widget class="QWidget" name="focusPieContainer" native="true">
+               <layout class="QVBoxLayout" name="verticalLayoutFocusPie">
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <widget class="QLabel" name="lblFocusChartTitle">
+                  <property name="font">
+                   <font>
+                    <bold>true</bold>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Sessions by Category</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignmentFlag::AlignCenter</set>
+                  </property>
+                  <property name="margin">
+                   <number>8</number>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QChartView" name="chartPieFocus">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+              <widget class="QWidget" name="focusTableContainer" native="true">
+               <layout class="QVBoxLayout" name="verticalLayoutFocusTable">
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <widget class="QLabel" name="lblFocusHistoryTitle">
+                  <property name="font">
+                   <font>
+                    <bold>true</bold>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Sessions</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignmentFlag::AlignCenter</set>
+                  </property>
+                  <property name="margin">
+                   <number>8</number>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QTableWidget" name="tableFocusHistory">
+                  <property name="editTriggers">
+                   <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
+                  </property>
+                  <property name="selectionBehavior">
+                   <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+                  </property>
+                  <attribute name="verticalHeaderVisible">
+                   <bool>false</bool>
+                  </attribute>
+                  <column>
+                   <property name="text">
+                    <string>Date</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>Category</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>Duration</string>
+                   </property>
+                  </column>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
              </widget>
             </item>
            </layout>

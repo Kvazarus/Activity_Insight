@@ -17,6 +17,8 @@ add_executable(Activity_Insight src/main.cpp
         assets/app.rc
         src/Category.h
         src/Mode.h
+        src/TimerState.h
+        src/FocusSession.h
 )
 
 target_link_libraries(Activity_Insight PRIVATE version)

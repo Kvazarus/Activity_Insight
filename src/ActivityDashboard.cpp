@@ -20,6 +20,9 @@ ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget 
     ui->overviewSplitter->setSizes({6000, 4000});
     ui->overviewSplitter->setStretchFactor(0, 6);
     ui->overviewSplitter->setStretchFactor(1, 4);
+    ui->focusStatsSplitter->setSizes({6000, 4000});
+    ui->focusStatsSplitter->setStretchFactor(0, 6);
+    ui->focusStatsSplitter->setStretchFactor(1, 4);
     ui->dateEditFrom->setDate(QDate::currentDate());
     ui->dateEditTo->setDate(QDate::currentDate());
     ui->dateEditFrom->setKeyboardTracking(false);
@@ -37,6 +40,7 @@ ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget 
     ui->tableFocusHistory->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
     ui->mainStackedWidget->setCurrentIndex(0);
     ui->focusTabWidget->setCurrentIndex(0);
+    updateFocusTimerStyle();
 
     QSizePolicy sp = ui->lblSavedStatus->sizePolicy();
     sp.setRetainSizeWhenHidden(true);
@@ -126,6 +130,13 @@ ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget 
     });
     connect(ui->btnSaveCategory, &QPushButton::clicked, this, &ActivityDashboard::saveCategorySettings);
     connect(ui->btnDeleteCategory, &QPushButton::clicked, this, &ActivityDashboard::deleteCategory);
+    connect(ui->spinWorkTime, &QSpinBox::valueChanged, this, [this](int val){
+        timer_remaining_seconds = val * 60;
+        updateTimerDisplay();
+    });
+    connect(ui->btnFocusStart, &QPushButton::clicked, this, &ActivityDashboard::btnFocusStartClicked);
+    connect(ui->btnFocusStop, &QPushButton::clicked, this, &ActivityDashboard::btnFocusStopClicked);
+    connect(ui->focusTabWidget, &QTabWidget::currentChanged, this, &ActivityDashboard::refreshData);
 
     updateHiddenAppsGroupBox();
 
@@ -137,12 +148,19 @@ ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget 
     connect(tray_icon, &QSystemTrayIcon::activated, this, &ActivityDashboard::iconActivated);
     tray_icon->show();
 
+    focus_timer = new QTimer(this);
+    focus_timer->setInterval(1000);
+    connect(focus_timer, &QTimer::timeout, this, &ActivityDashboard::onFocusTimerTick);
+
     updateCategories();
     QMainWindow::showMaximized();
     refreshData();
 }
 
 ActivityDashboard::~ActivityDashboard() {
+    if (tray_icon) {
+        tray_icon->hide();
+    }
     delete ui;
 }
 
@@ -180,7 +198,9 @@ void ActivityDashboard::refreshData() {
     QDate date_to = ui->dateEditTo->date();
 
     if (current_mode == Mode::FocusSessions) {
-
+        if (ui->focusTabWidget->currentIndex() == 1) {
+            refreshFocusSessionHistory(date_from, date_to);
+        }
     } else {
         if (ui->tabWidget->currentIndex() == 0) {
             refreshOverview(date_from, date_to);
@@ -642,6 +662,15 @@ void ActivityDashboard::restoreHiddenApp() {
 
 void ActivityDashboard::updateCategories() {
     categories = database_manager->getCategories();
+    ui->comboFocusCategory->clear();
+    int ind = 0;
+    for(auto &[id, cat] : categories) {
+        ui->comboFocusCategory->addItem(cat.name, id);
+        if (id == 1) {
+            ui->comboFocusCategory->setCurrentIndex(ind);
+        }
+        ind++;
+    }
 }
 
 QString ActivityDashboard::generateRandomColor() {
@@ -718,4 +747,219 @@ void ActivityDashboard::deleteCategory() {
 
     inflictFadingEffectOnLabel(ui->lblCategoryDeletedStatus);
     refreshCategorySettings();
+}
+
+void ActivityDashboard::insertFocusSession() {
+    int duration = total_session_seconds - timer_remaining_seconds;
+    int category_id = ui->comboFocusCategory->currentData().toInt();
+    QDateTime date_time = QDateTime::currentDateTime();
+    database_manager->insertFocusSession(category_id, date_time, duration);
+}
+
+void ActivityDashboard::updateFocusTimerStyle() {
+    switch (timer_state) {
+        case TimerState::Disabled:
+        {
+            ui->lblTimerStatus->setText("Ready to focus");
+            ui->groupFocusSettings->setEnabled(true);
+            ui->frameTimerDisplay->setStyleSheet(
+                "QFrame#frameTimerDisplay { background-color: transparent; border: none; }"
+                "QLabel { color: #aaaaaa; }"
+            );
+            ui->btnFocusStart->setText("Start");
+            ui->btnFocusStop->setText("Stop");
+            ui->btnFocusStop->setEnabled(false);
+            ui->btnFocusStart->setStyleSheet("QPushButton { background-color: #8B4513; color: white; border: none; } QPushButton:hover { background-color: #a0522d; }");
+            ui->btnFocusStop->setStyleSheet("QPushButton { background-color: #333333; color: #777777; border: none; }");
+            break;
+        }
+        case TimerState::Working:
+        {
+            ui->groupFocusSettings->setEnabled(false);
+            ui->btnFocusStop->setEnabled(true);
+            if (!is_break_mode) {
+                ui->lblTimerStatus->setText("Focusing...");
+                ui->frameTimerDisplay->setStyleSheet(
+                    "QFrame#frameTimerDisplay { background-color: rgba(255, 78, 33, 0.15); border: 2px solid rgba(139, 69, 19, 0.4); }"
+                    "QLabel { color: #e6b89c; }"
+                );
+                ui->btnFocusStart->setText("Pause");
+                ui->btnFocusStop->setText("Stop");
+                ui->btnFocusStart->setStyleSheet("QPushButton { background-color: rgba(122, 122, 122, 0.7); color: white; } QPushButton:hover { background-color: #8f8f8f; }");
+                ui->btnFocusStop->setStyleSheet("QPushButton { background-color: rgba(220, 53, 69, 0.8); color: white; border: none; } QPushButton:hover { background-color: #dc3545; }");
+            } else {
+                ui->lblTimerStatus->setText("Break time");
+                ui->frameTimerDisplay->setStyleSheet(
+                    "QFrame#frameTimerDisplay { background-color: rgba(25, 135, 84, 0.15); border: 2px solid rgba(25, 135, 84, 0.4); }"
+                    "QLabel { color: #20c997; }"
+                );
+                ui->btnFocusStart->setText("Pause");
+                ui->btnFocusStop->setText("Skip");
+                ui->btnFocusStart->setStyleSheet("QPushButton { background-color: rgba(122, 122, 122, 0.7); color: white; } QPushButton:hover { background-color: #8f8f8f; }");
+                ui->btnFocusStop->setStyleSheet("QPushButton { background-color: rgba(108, 117, 125, 0.6); color: white; border: none; } QPushButton:hover { background-color: #6c757d; }");
+            }
+            break;
+        }
+        case TimerState::Paused:
+        {
+            ui->lblTimerStatus->setText("Paused");
+            ui->btnFocusStart->setText("Resume");
+            ui->btnFocusStop->setText(is_break_mode ? "Skip" : "Done");
+            if (!is_break_mode) {
+                ui->btnFocusStart->setStyleSheet("QPushButton { background-color: #8B4513; color: white; border: none; } QPushButton:hover { background-color: #a0522d; }");
+                ui->btnFocusStop->setStyleSheet("QPushButton { background-color: #198754; color: white; border: none; } QPushButton:hover { background-color: #157347; }");
+            } else {
+                ui->btnFocusStart->setStyleSheet("QPushButton { background-color: #198754; color: white; border: none; } QPushButton:hover { background-color: #157347; }");
+                ui->btnFocusStop->setStyleSheet("QPushButton { background-color: #6c757d; color: white; border: none; } QPushButton:hover { background-color: #5a6268; }");
+            }
+            break;
+        }
+    }
+}
+
+void ActivityDashboard::updateTimerDisplay() {
+    int mins = timer_remaining_seconds / 60;
+    int secs = timer_remaining_seconds % 60;
+
+    ui->lblTimerDisplay->setText(QString("%1:%2").arg(mins, 2, 10, '0').arg(secs, 2, 10, '0'));
+}
+
+void ActivityDashboard::onFocusTimerTick() {
+    timer_remaining_seconds--;
+    updateTimerDisplay();
+    if (timer_remaining_seconds <= 0) {
+        focus_timer->stop();
+        if (is_break_mode) {
+            timer_state = TimerState::Disabled;
+            timer_remaining_seconds = ui->spinWorkTime->value() * 60;
+            updateTimerDisplay();
+        } else {
+            insertFocusSession();
+            timer_remaining_seconds = ui->spinBreakTime->value() * 60;
+            focus_timer->start();
+            updateTimerDisplay();
+        }
+        is_break_mode = !is_break_mode;
+        updateFocusTimerStyle();
+    }
+}
+
+void ActivityDashboard::btnFocusStartClicked() {
+    switch (timer_state) {
+        case TimerState::Disabled: {
+            timer_remaining_seconds = ui->spinWorkTime->value() * 60;
+            total_session_seconds = timer_remaining_seconds;
+            timer_state = TimerState::Working;
+            is_break_mode = false;
+            updateFocusTimerStyle();
+            focus_timer->start();
+            break;
+        }
+        case TimerState::Working: {
+            focus_timer->stop();
+            timer_state = TimerState::Paused;
+            updateFocusTimerStyle();
+            break;
+        }
+        case TimerState::Paused: {
+            focus_timer->start();
+            timer_state = TimerState::Working;
+            updateFocusTimerStyle();
+            break;
+        }
+    }
+}
+
+void ActivityDashboard::btnFocusStopClicked() {
+    if (timer_state == TimerState::Paused && !is_break_mode) {
+        insertFocusSession();
+        timer_state = TimerState::Working;
+        is_break_mode = true;
+        timer_remaining_seconds = ui->spinBreakTime->value() * 60;
+        focus_timer->start();
+    } else {
+        focus_timer->stop();
+        timer_state = TimerState::Disabled;
+        timer_remaining_seconds = ui->spinWorkTime->value() * 60;
+        is_break_mode = false;
+    }
+    updateTimerDisplay();
+    updateFocusTimerStyle();
+}
+
+void ActivityDashboard::refreshFocusSessionHistory(QDate &date_from, QDate &date_to) {
+    std::vector<std::pair<int, int64_t>> sessions_categories = database_manager->getFocusSessionsCategoriesStats(date_from, date_to);
+    std::vector<FocusSession> focus_sessions = database_manager->getFocusSessions(date_from, date_to);
+    int64_t time_sum = std::accumulate(sessions_categories.begin(), sessions_categories.end(), (int64_t) 0,
+                                       [](auto& a, auto& b) {
+                                           return a + b.second;
+                                       });;
+
+    ui->lblTotalFocusStat->setText(getDisplayTime(time_sum));
+    ui->lblTotalSessionsStat->setText(QString::number(focus_sessions.size()));
+    ui->tableFocusHistory->setRowCount(focus_sessions.size());
+
+    QChart* chart = ui->chartPieFocus->chart();
+    if (!chart) {
+        chart = new QChart;
+        ui->chartPieFocus->setChart(chart);
+        ui->chartPieFocus->setRenderHint(QPainter::Antialiasing);
+    }
+    chart->removeAllSeries();
+
+    auto empty_data_label = ui->chartPieFocus->findChild<QLabel*>("emptyDataLabelFocus");
+    if (sessions_categories.empty()) {
+        if (!empty_data_label) {
+            empty_data_label = new QLabel("No data for these dates", ui->chartPieFocus);
+            empty_data_label->setObjectName("emptyDataLabelFocus");
+            empty_data_label->setAlignment(Qt::AlignCenter);
+            empty_data_label->setStyleSheet("QLabel { color : orange; font-size : 20px; }");
+
+            QVBoxLayout* overlay_layout = new QVBoxLayout(ui->chartPieFocus);
+            overlay_layout->addWidget(empty_data_label);
+        }
+        empty_data_label->show();
+        chart->setTheme(QChart::ChartThemeDark);
+        chart->setBackgroundVisible(false);
+        chart->setAnimationOptions(QChart::SeriesAnimations);
+        return;
+    }
+    if (empty_data_label) {
+        empty_data_label->hide();
+    }
+
+    auto *pie_series = new QPieSeries;
+    int64_t others_time = 0;
+    for (int i = 0; i < sessions_categories.size(); i++) {
+        Category category = categories[sessions_categories[i].first];
+        QString name = category.name;
+        int64_t total_time = sessions_categories[i].second;
+        QPieSlice *slice = new QPieSlice(name, total_time);
+        slice->setColor(category.color);
+        if (total_time * 20 >= time_sum) {
+            pie_series->append(slice);
+        } else {
+            others_time += total_time;
+        }
+    }
+    if (others_time > 0) {
+        pie_series->append("Others", others_time);
+    }
+    pie_series->setLabelsVisible();
+
+    chart->addSeries(pie_series);
+    chart->setTheme(QChart::ChartThemeDark);
+    chart->setBackgroundVisible(false);
+    chart->setAnimationOptions(QChart::SeriesAnimations);
+    chart->legend()->setVisible(false);
+
+    for (int i = 0; i < focus_sessions.size(); i++) {
+        QDateTime date_time = QDateTime::fromSecsSinceEpoch(focus_sessions[i].session_datetime);
+        QTableWidgetItem *date_item = new QTableWidgetItem(date_time.toString("d MMMM yyyy hh:mm:ss"));
+        ui->tableFocusHistory->setItem(i, 0, date_item);
+        QTableWidgetItem *category_item = new QTableWidgetItem(categories[focus_sessions[i].category_id].name);
+        ui->tableFocusHistory->setItem(i, 1, category_item);
+        QTableWidgetItem *duration_item = new QTableWidgetItem(getDisplayTime(focus_sessions[i].duration));
+        ui->tableFocusHistory->setItem(i, 2, duration_item);
+    }
 }
