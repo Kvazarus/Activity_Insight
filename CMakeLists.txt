@@ -28,6 +28,7 @@ target_link_libraries(Activity_Insight PRIVATE Qt6::Sql Qt6::Core Qt6::Widgets Q
 
 set(app_resource_files
     "assets/app_icon.png"
+    "assets/check_icon.png"
 )
 
 qt_add_resources(Activity_Insight "app_resources"

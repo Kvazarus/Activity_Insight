@@ -1,4 +1,5 @@
 #include "WindowsReaderThread.h"
+#include <shellapi.h>
 
 std::wstring WindowsReaderThread::getAppNameFromPath(const std::wstring &exe_filename) {
     return std::filesystem::path(exe_filename).stem().wstring();
@@ -96,24 +97,61 @@ int64_t WindowsReaderThread::getTimeDiffInSecs(std::chrono::time_point<std::chro
                           std::chrono::time_point<std::chrono::steady_clock> end) {
     return std::chrono::duration_cast<std::chrono::seconds>(abs(end - begin)).count();
 }
+
+bool WindowsReaderThread::isUserIDLE() {
+    LASTINPUTINFO last_input;
+    last_input.cbSize = sizeof(last_input);
+    DWORD idle_time;
+
+    QUERY_USER_NOTIFICATION_STATE quns;
+
+    if (!GetLastInputInfo(&last_input)
+        || SHQueryUserNotificationState(&quns) != S_OK) {
+        std::cerr << "Error when checking IDLE status" << std::endl;
+        return false;
+    }
+
+    bool is_fullscreen = quns == QUNS_RUNNING_D3D_FULL_SCREEN || quns == QUNS_BUSY || quns == QUNS_PRESENTATION_MODE
+        || quns == QUNS_APP;
+
+    idle_time = GetTickCount() - last_input.dwTime;
+
+//    std::cout << "IDLE time: " << idle_time << "\n" << "quns: " << quns << "\nis_fullscreen: " << is_fullscreen << std::endl;
+
+    return idle_time >= idle_milleseconds_threshold && !is_fullscreen;
+}
+
+
 void WindowsReaderThread::run() {
     WindowData window_data;
     do {
         window_data = getWindowData();
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     } while (!window_data.isValid());
-    printWindowData(window_data);
+//    printWindowData(window_data);
 
     auto begin_time = std::chrono::high_resolution_clock::now();
     while (!isInterruptionRequested()) {
+        if (isUserIDLE()) {
+            was_user_idle = true;
+            sleep(1);
+            continue;
+        }
+        if (was_user_idle) {
+            begin_time = std::chrono::high_resolution_clock::now();
+            was_user_idle = false;
+        }
         WindowData new_window_data = getWindowData();
         auto end_time = std::chrono::high_resolution_clock::now();
         if (new_window_data.isValid() && window_data.window_handle != new_window_data.window_handle) {
             window_data.time = getTimeDiffInSecs(begin_time, end_time);
             begin_time = end_time;
             emit sendActivityLog(window_data);
+            if (is_focus_session && new_window_data.exe_filename != L"C:\\Windows\\explorer.exe") {
+                emit sendCurrentApp(QString::fromStdWString(new_window_data.exe_filename));
+            }
             window_data = new_window_data;
-            printWindowData(window_data);
+//            printWindowData(window_data);
         } else if (!new_window_data.isValid()) {
             std::cerr << new_window_data.error << std::endl;
         }
@@ -125,4 +163,8 @@ void WindowsReaderThread::run() {
         }
         sleep(1);
     }
+}
+
+void WindowsReaderThread::focusSessionFlagToggled(bool is_focus_session_) {
+    is_focus_session = is_focus_session_;
 }

@@ -993,7 +993,7 @@
         <item>
          <widget class="QTabWidget" name="focusTabWidget">
           <property name="currentIndex">
-           <number>1</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="tabFocusTimer">
            <attribute name="title">
@@ -1101,6 +1101,13 @@
                   </size>
                  </property>
                 </spacer>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="productivityNotificationsCheckBox">
+                 <property name="text">
+                  <string>Productivity notifications</string>
+                 </property>
+                </widget>
                </item>
               </layout>
              </widget>

@@ -8,6 +8,9 @@
 #include <QDate>
 
 DatabaseManager::DatabaseManager(QObject *parent) : QObject(parent) {
+}
+
+void DatabaseManager::init() {
     db = QSqlDatabase::addDatabase("QSQLITE");
     db.setDatabaseName("activity_insight.db");
     bool ok = db.open();
@@ -16,14 +19,8 @@ DatabaseManager::DatabaseManager(QObject *parent) : QObject(parent) {
     }
     QSqlQuery q(db);
     q.exec("PRAGMA foreign_keys = ON;");
-}
 
-void DatabaseManager::init() {
-    QSqlQuery q(db);
-
-    // Позже можно добавить таблицу связанную с window title
     std::vector<QString> init_queries = {
-        // может быть потом настроить рандомизацию color
         R"(
             CREATE TABLE IF NOT EXISTS categories (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,7 +65,9 @@ void DatabaseManager::init() {
                 duration INTEGER NOT NULL,
                 FOREIGN KEY(category_id) REFERENCES categories(id) ON DELETE SET DEFAULT
             );
-        )"
+        )",
+        "CREATE INDEX IF NOT EXISTS idx_focus_session_time ON focus_sessions (session_datetime);",
+        "CREATE INDEX IF NOT EXISTS idx_apps_category ON applications (category_id);"
     };
 
     for (auto &query : init_queries) {
@@ -262,7 +261,7 @@ std::unordered_map<int, Category> DatabaseManager::getCategories() {
     return categories;
 }
 
-std::vector<int64_t> DatabaseManager::getWeekUpdatedDailyStats(QDate &date_from, QDate &date_to) {
+std::vector<int64_t> DatabaseManager::getWeekUpdatedDailyStats(const QDate &date_from, const QDate &date_to) {
     updateDailyStats();
 
     if (date_from.daysTo(date_to) != 6) {
@@ -302,7 +301,7 @@ std::vector<int64_t> DatabaseManager::getWeekUpdatedDailyStats(QDate &date_from,
     return res;
 }
 
-std::vector<int64_t> DatabaseManager::getWeekUpdatedAppStats(const QString &exe_filename, QDate &date_from, QDate &date_to) {
+std::vector<int64_t> DatabaseManager::getWeekUpdatedAppStats(const QString &exe_filename, const QDate &date_from, const QDate &date_to) {
     updateDailyStats();
 
     if (date_from.daysTo(date_to) != 6) {
@@ -341,7 +340,7 @@ std::vector<int64_t> DatabaseManager::getWeekUpdatedAppStats(const QString &exe_
     return res;
 }
 
-std::vector<int64_t> DatabaseManager::getWeekUpdatedCategoryStats(int category_id, QDate &date_from, QDate &date_to) {
+std::vector<int64_t> DatabaseManager::getWeekUpdatedCategoryStats(int category_id, const QDate &date_from, const QDate &date_to) {
     updateDailyStats();
 
     if (date_from.daysTo(date_to) != 6) {
@@ -559,4 +558,32 @@ std::vector<FocusSession> DatabaseManager::getFocusSessions(const QDate &date_fr
         res.push_back({q.value(0).toInt(), q.value(1).toLongLong(), q.value(2).toInt()});
     }
     return res;
+}
+
+bool DatabaseManager::isAppProductive(const QString &exe_filename) {
+    QSqlQuery q(db);
+
+    q.prepare(R"(
+        SELECT c.is_productive
+        FROM applications a
+        JOIN categories c ON a.category_id = c.id
+        WHERE a.exe_filename = ?
+    )");
+    q.addBindValue(exe_filename);
+
+    if (!q.exec()) {
+        qDebug() << "Failed to get app productivity flag: " << q.lastError().text();
+        return true;
+    }
+
+    if (!q.next()) { // Значит этого приложения в базе нет, значит оно без категории
+        q.prepare("SELECT is_productive FROM categories WHERE id = 1");
+        if (q.exec() && q.next()) {
+            return q.value(0).toBool();
+        }
+    } else {
+        return q.value(0).toBool();
+    }
+
+    return true;
 }

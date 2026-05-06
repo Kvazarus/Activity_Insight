@@ -44,8 +44,9 @@ class ActivityDashboard : public QMainWindow {
     int timer_remaining_seconds = 25 * 60;
     int total_session_seconds;
     bool is_break_mode = false;
-    bool is_timer_working;
     TimerState timer_state = TimerState::Disabled;
+    std::unordered_map<QString, bool> app_productivity_cache;
+    std::vector<std::pair<QString, QString>> tray_messages;
 
     QString getDisplayTime(int64_t time);
     void createMenu();
@@ -72,6 +73,9 @@ class ActivityDashboard : public QMainWindow {
  protected:
     void closeEvent(QCloseEvent *event) override;
 
+ signals:
+    void toggleFocusSessionFlag(bool is_focus_session);
+
  private slots:
     void refreshData();
     void iconActivated(QSystemTrayIcon::ActivationReason activation_reason);
@@ -80,6 +84,9 @@ class ActivityDashboard : public QMainWindow {
     void onFocusTimerTick();
     void btnFocusStartClicked();
     void btnFocusStopClicked();
+
+ public slots:
+    void currentAppChanged(const QString& exe_filename);
 };
 
 #endif //ACTIVITY_INSIGHT_SRC_ACTIVITYDASHBOARD_H_

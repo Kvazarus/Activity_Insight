@@ -9,6 +9,7 @@
 #include <QPropertyAnimation>
 #include <QColorDialog>
 #include <QMessageBox>
+#include <iostream>
 
 #include "ActivityDashboard.h"
 #include "ui_ActivityDashboard.h"
@@ -61,6 +62,20 @@ ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget 
     ui->comboMode->setCurrentIndex(0);
     ui->tabWidget->setCurrentIndex(0);
     ui->lblColorPreview->setProperty("category_color", default_color);
+
+    ui->productivityNotificationsCheckBox->setCheckState(Qt::CheckState::Checked);
+
+    tray_messages = {
+        {"Focus check", "You're still in a focus session. Time to get back?"},
+        {"Wandering off?", "This app isn't on your productive list. Stay focused!"},
+        {"Gentle reminder", "Your focus timer is still ticking in the background."},
+        {"Off track?", "Looks like a distraction. Let's get back to work!"},
+        {"Caught in 4K \U0001F4F8", "Does this look like work to you?"},
+        {"Productivity Police \U0001F6A8", "Step away from the distraction and nobody gets hurt!"},
+        {"Oops, wrong app!", "Your focus timer is secretly judging you right now."},
+        {"Is this a break?", "Because the timer definitely didn't pause itself..."},
+        {"Hello there! \U0001F44B", "Just your friendly neighborhood timer reminding you to work."}
+    };
 
     connect(ui->tableOverviewList, &QTableWidget::cellClicked, this, &ActivityDashboard::tableItemLeftClicked);
     connect(ui->tableOverviewList, &QTableWidget::customContextMenuRequested, this, [this](const QPoint &pos){
@@ -192,8 +207,7 @@ void ActivityDashboard::createMenu() {
 }
 
 void ActivityDashboard::refreshData() {
-    qDebug() << "refreshed";
-
+//    qDebug() << "refreshed";
     QDate date_from = ui->dateEditFrom->date();
     QDate date_to = ui->dateEditTo->date();
 
@@ -634,6 +648,7 @@ void ActivityDashboard::saveAppSettings() {
         ui->lblSavedStatus->setStyleSheet("QLabel { color : red; }");
     } else {
         database_manager->updateAppInfo({exe_filename, display_name, is_hidden, category_id,0});
+        app_productivity_cache.erase(exe_filename);
         ui->lblSavedStatus->setText("Saved!");
         ui->lblSavedStatus->setStyleSheet("QLabel { color : #4CAF50; }");
         if (active_app.is_hidden != is_hidden) {
@@ -704,6 +719,7 @@ void ActivityDashboard::saveCategorySettings() {
                 ui->lblCategorySavedStatus->setStyleSheet("QLabel { color : orange; }");
             } else {
                 database_manager->updateCategoryInfo({active_category_id, category_name, color, is_productive});
+                app_productivity_cache.clear();
                 ui->lblCategorySavedStatus->setText("Saved!");
                 ui->lblCategorySavedStatus->setStyleSheet("QLabel { color : #4CAF50; }");
             }
@@ -833,11 +849,16 @@ void ActivityDashboard::onFocusTimerTick() {
             timer_state = TimerState::Disabled;
             timer_remaining_seconds = ui->spinWorkTime->value() * 60;
             updateTimerDisplay();
+            QIcon message_icon = QApplication::style()->standardIcon(QStyle::SP_DialogNoButton);
+            tray_icon->showMessage("Break is over", "The next pomodoro will go better!", message_icon, 5000);
         } else {
+            emit toggleFocusSessionFlag(false);
             insertFocusSession();
             timer_remaining_seconds = ui->spinBreakTime->value() * 60;
             focus_timer->start();
             updateTimerDisplay();
+            QIcon message_icon = QApplication::style()->standardIcon(QStyle::SP_DialogYesButton);
+            tray_icon->showMessage("Pomodoro is finished", "Take a break", message_icon, 5000);
         }
         is_break_mode = !is_break_mode;
         updateFocusTimerStyle();
@@ -850,6 +871,7 @@ void ActivityDashboard::btnFocusStartClicked() {
             timer_remaining_seconds = ui->spinWorkTime->value() * 60;
             total_session_seconds = timer_remaining_seconds;
             timer_state = TimerState::Working;
+            emit toggleFocusSessionFlag(true);
             is_break_mode = false;
             updateFocusTimerStyle();
             focus_timer->start();
@@ -858,12 +880,18 @@ void ActivityDashboard::btnFocusStartClicked() {
         case TimerState::Working: {
             focus_timer->stop();
             timer_state = TimerState::Paused;
+            if (!is_break_mode) {
+                emit toggleFocusSessionFlag(false);
+            }
             updateFocusTimerStyle();
             break;
         }
         case TimerState::Paused: {
             focus_timer->start();
             timer_state = TimerState::Working;
+            if (!is_break_mode) {
+                emit toggleFocusSessionFlag(true);
+            }
             updateFocusTimerStyle();
             break;
         }
@@ -877,9 +905,14 @@ void ActivityDashboard::btnFocusStopClicked() {
         is_break_mode = true;
         timer_remaining_seconds = ui->spinBreakTime->value() * 60;
         focus_timer->start();
+        QIcon message_icon = QApplication::style()->standardIcon(QStyle::SP_DialogYesButton);
+        tray_icon->showMessage("Pomodoro is finished", "Take a break", message_icon, 5000);
     } else {
         focus_timer->stop();
         timer_state = TimerState::Disabled;
+        if (!is_break_mode) {
+            emit toggleFocusSessionFlag(false);
+        }
         timer_remaining_seconds = ui->spinWorkTime->value() * 60;
         is_break_mode = false;
     }
@@ -961,5 +994,25 @@ void ActivityDashboard::refreshFocusSessionHistory(QDate &date_from, QDate &date
         ui->tableFocusHistory->setItem(i, 1, category_item);
         QTableWidgetItem *duration_item = new QTableWidgetItem(getDisplayTime(focus_sessions[i].duration));
         ui->tableFocusHistory->setItem(i, 2, duration_item);
+    }
+}
+
+void ActivityDashboard::currentAppChanged(const QString &exe_filename) {
+    if (!ui->productivityNotificationsCheckBox->isChecked()) return;
+
+    if (timer_state == TimerState::Working) {
+        bool is_productive;
+        if (app_productivity_cache.find(exe_filename) != app_productivity_cache.end()) {
+            is_productive = app_productivity_cache[exe_filename];
+        } else {
+            is_productive = database_manager->isAppProductive(exe_filename);
+            app_productivity_cache[exe_filename] = is_productive;
+        }
+
+        if (!is_productive) {
+            int rnd_idx = QRandomGenerator::global()->bounded(tray_messages.size());
+            QIcon message_icon = QApplication::style()->standardIcon(QStyle::SP_MessageBoxInformation);
+            tray_icon->showMessage(tray_messages[rnd_idx].first, tray_messages[rnd_idx].second, message_icon, 5000);
+        }
     }
 }

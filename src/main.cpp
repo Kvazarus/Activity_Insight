@@ -1,8 +1,3 @@
-// TODO: сделать обработку вкладок браузера (в том числе обновить цикл в main)
-// TODO: при отвлечении во время активной фокус сессии показывать сообщения с юмором, а не пустые "Вы отвлеклись"
-// TODO: создать подсказку для пользователя, что можно создать доп категорию с припиской отвлекающая,
-// TODO: чтобы если что в категории с одним названием были и отвлекающие приложения, и нет
-
 #include <windows.h>
 #include <iostream>
 #include <chrono>
@@ -15,6 +10,7 @@
 #include <corecrt_io.h>
 
 #include <QApplication>
+#include <QMessageBox>
 
 #include "WindowData.h"
 #include "DatabaseManager.h"
@@ -228,6 +224,35 @@ void setupAppStyle(QApplication& a) {
     QPushButton#btnFocusStop:pressed {
         background-color: #bd2130;
     }
+
+    /* --- CheckBoxes --- */
+    QCheckBox {
+        color: #ffffff;
+        spacing: 8px;
+    }
+
+    QCheckBox::indicator {
+        width: 18px;
+        height: 18px;
+        background-color: #2b2b2b;
+        border: 1px solid #444;
+        border-radius: 4px;
+    }
+
+    QCheckBox::indicator:hover {
+        border: 1px solid #0D6EFD;
+    }
+
+    QCheckBox::indicator:checked {
+        background-color: #0D6EFD;
+        border: 1px solid #0D6EFD;
+        image: url(:/assets/check_icon.png);
+    }
+
+    QCheckBox::indicator:checked:hover {
+        background-color: #0B5ED7;
+        border: 1px solid #0B5ED7;
+    }
     )";
 
     a.setStyleSheet(styleSheet);
@@ -247,7 +272,13 @@ int main(int argc, char *argv[]) {
     qRegisterMetaType<WindowData>("WindowData");
 
     DatabaseManager database_manager;
-    database_manager.init();
+    try {
+        database_manager.init();
+    } catch (const std::exception &e) {
+        QMessageBox::critical(nullptr, "Database Error",
+                              QString("Failed to initialize the database:\n%1").arg(e.what()));
+        return -1;
+    }
 
     ActivityDashboard activity_dashboard(&database_manager);
     WindowsReaderThread windows_reader_thread(&activity_dashboard);
@@ -256,11 +287,13 @@ int main(int argc, char *argv[]) {
     QObject::connect(&windows_reader_thread, &WindowsReaderThread::sendActivityLog, &database_manager,
             [&database_manager](const WindowData& window_data) {
         database_manager.insertActivityLog(window_data);
-        for (auto& x : database_manager.getUpdatedDailyAppStats()) {
-            std::wcout << x.display_name.toStdWString() << L": " << x.total_time << L" sec" << std::endl;
-        }
-        std::wcout << std::endl;
+//        for (auto& x : database_manager.getUpdatedDailyAppStats()) {
+//            std::wcout << x.display_name.toStdWString() << L": " << x.total_time << L" sec" << std::endl;
+//        }
+//        std::wcout << std::endl;
     });
+    QObject::connect(&windows_reader_thread, &WindowsReaderThread::sendCurrentApp, &activity_dashboard, &ActivityDashboard::currentAppChanged);
+    QObject::connect(&activity_dashboard, &ActivityDashboard::toggleFocusSessionFlag, &windows_reader_thread, &WindowsReaderThread::focusSessionFlagToggled);
 
     windows_reader_thread.start();
     activity_dashboard.show();
