@@ -142,6 +142,7 @@ ActivityDashboard::ActivityDashboard(DatabaseManager *database_manager, QWidget 
         active_category_id = 0;
         ui->comboEditCategory->setPlaceholderText("New Category");
         ui->comboEditCategory->setCurrentIndex(-1);
+        refreshData();
     });
     connect(ui->btnSaveCategory, &QPushButton::clicked, this, &ActivityDashboard::saveCategorySettings);
     connect(ui->btnDeleteCategory, &QPushButton::clicked, this, &ActivityDashboard::deleteCategory);
@@ -236,6 +237,7 @@ void ActivityDashboard::refreshData() {
         } else if (ui->tabWidget->currentIndex() == 3) {
             if (current_mode == Mode::Applications) {
                 ui->stackedWidgetSettings->setCurrentIndex(0);
+                refreshApplicationSettings();
             } else if (current_mode == Mode::Categories) {
                 ui->stackedWidgetSettings->setCurrentIndex(1);
                 refreshCategorySettings();
@@ -406,6 +408,25 @@ void ActivityDashboard::updateActiveApp(int row) {
     active_app.category_id = table->item(row, 4)->text().toInt();
 }
 
+void ActivityDashboard::refreshApplicationSettings() {
+    ui->editSettingsPath->setText(active_app.exe_filename);
+    ui->editSettingsName->setText(active_app.display_name);
+
+    ui->comboSettingsCategory->clear();
+    int ind = 0;
+    for(auto &[id, cat] : categories) {
+        ui->comboSettingsCategory->addItem(cat.name, id);
+        if (id == active_app.category_id) {
+            ui->comboSettingsCategory->setCurrentIndex(ind);
+        }
+        ind++;
+    }
+
+    ui->checkSettingsHidden->setCheckState(active_app.is_hidden ? Qt::CheckState::Checked : Qt::CheckState::Unchecked);
+    updateHiddenAppsGroupBox();
+}
+
+
 void ActivityDashboard::tableItemLeftClicked(int row) {
     if (current_mode == Mode::Applications) {
         updateActiveApp(row);
@@ -418,22 +439,7 @@ void ActivityDashboard::tableItemLeftClicked(int row) {
 void ActivityDashboard::tableItemRightClicked(int row) {
     if (current_mode == Mode::Applications) {
         updateActiveApp(row);
-
-        ui->editSettingsPath->setText(active_app.exe_filename);
-        ui->editSettingsName->setText(active_app.display_name);
-
-        ui->comboSettingsCategory->clear();
-        int ind = 0;
-        for(auto &[id, cat] : categories) {
-            ui->comboSettingsCategory->addItem(cat.name, id);
-            if (id == active_app.category_id) {
-                ui->comboSettingsCategory->setCurrentIndex(ind);
-            }
-            ind++;
-        }
-
-        ui->checkSettingsHidden->setCheckState(active_app.is_hidden ? Qt::CheckState::Checked : Qt::CheckState::Unchecked);
-        updateHiddenAppsGroupBox();
+        refreshApplicationSettings();
     } else {
         active_category_id = ui->tableOverviewList->item(row, 2)->text().toInt();
         refreshCategorySettings();

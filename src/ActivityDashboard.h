@@ -56,6 +56,7 @@ class ActivityDashboard : public QMainWindow {
     QBarSet* setupWeekChart(std::vector<int64_t>& data, QChart* chart);
     void refreshDailyActivity(QDate &date_from, QDate &date_to);
     void refreshDetails(QDate &date_from, QDate &date_to);
+    void refreshApplicationSettings();
     void saveAppSettings();
     void restoreHiddenApp();
     void updateHiddenAppsGroupBox();

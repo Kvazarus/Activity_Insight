@@ -16,6 +16,9 @@
 #include "DatabaseManager.h"
 #include "WindowsReaderThread.h"
 #include "ActivityDashboard.h"
+#include "RunGuard.h"
+
+// TODO: сделать приложение Single Instance (то бишь когда запускаешь второй раз приложение, оно закрывалось само)
 
 void setupAppStyle(QApplication& a) {
     a.setStyle("Fusion");
@@ -260,6 +263,14 @@ void setupAppStyle(QApplication& a) {
 
 int main(int argc, char *argv[]) {
     QApplication a(argc, argv);
+
+    RunGuard guard("ActivityInsightApp");
+    if (!guard.tryToRun()) {
+        QMessageBox::information(nullptr, "Application Already Running",
+                              "Activity Insight is already running. Please check your system tray");
+        return 0;
+    }
+
     a.setApplicationName("Activity Insight");
     setupAppStyle(a);
 

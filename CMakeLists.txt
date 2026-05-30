@@ -19,6 +19,8 @@ add_executable(Activity_Insight WIN32 src/main.cpp
         src/Mode.h
         src/TimerState.h
         src/FocusSession.h
+        src/RunGuard.cpp
+        src/RunGuard.h
 )
 
 target_link_libraries(Activity_Insight PRIVATE version)
