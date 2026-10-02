@@ -22,7 +22,7 @@ class WindowsReaderThread : public QThread {
  private:
     std::unordered_map<std::wstring, std::wstring> app_name_cache;
     std::atomic<bool> is_focus_session = false;
-    const int64_t idle_milleseconds_threshold = 7*60*1000; // 7 minutes
+    const int64_t idle_milleseconds_threshold = 5*60*1000; // 5 minutes
     bool was_user_idle = false;
 
     std::wstring getAppNameFromPath(const std::wstring &exe_filename);

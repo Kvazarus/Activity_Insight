@@ -6,6 +6,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 
 add_executable(Activity_Insight WIN32 src/main.cpp
+        # src/main.cpp
         src/DatabaseManager.h
         src/DatabaseManager.cpp
         src/AppStats.h

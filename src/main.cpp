@@ -18,8 +18,6 @@
 #include "ActivityDashboard.h"
 #include "RunGuard.h"
 
-// TODO: сделать приложение Single Instance (то бишь когда запускаешь второй раз приложение, оно закрывалось само)
-
 void setupAppStyle(QApplication& a) {
     a.setStyle("Fusion");
 

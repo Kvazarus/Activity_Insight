@@ -127,12 +127,17 @@ void WindowsReaderThread::run() {
     do {
         window_data = getWindowData();
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    } while (!window_data.isValid());
+    } while (!isInterruptionRequested() && !window_data.isValid());
 //    printWindowData(window_data);
 
     auto begin_time = std::chrono::high_resolution_clock::now();
     while (!isInterruptionRequested()) {
         if (isUserIDLE()) {
+            if (!was_user_idle) {
+                auto end_time = std::chrono::high_resolution_clock::now();
+                window_data.time = getTimeDiffInSecs(begin_time, end_time);
+                emit sendActivityLog(window_data);
+            }
             was_user_idle = true;
             sleep(1);
             continue;
@@ -142,6 +147,7 @@ void WindowsReaderThread::run() {
             was_user_idle = false;
         }
         WindowData new_window_data = getWindowData();
+        std::wcout << new_window_data.window_title << std::endl;
         auto end_time = std::chrono::high_resolution_clock::now();
         if (new_window_data.isValid() && window_data.window_handle != new_window_data.window_handle) {
             window_data.time = getTimeDiffInSecs(begin_time, end_time);
